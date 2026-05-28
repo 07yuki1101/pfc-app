@@ -58,6 +58,7 @@ export default function HomePage() {
   };
 
   async function handleAI() {
+    if (!profile) return;
     if (!canUseAI()) {
       toast.error("本日のAI利用上限に達しました（無料: 3回/日）");
       return;
