@@ -226,26 +226,47 @@ export default function HomePage() {
           {consumed.entries.length === 0 ? (
             <p className="text-zinc-500 text-sm">まだ記録がありません</p>
           ) : (
-            <div className="flex flex-col gap-2">
-              {consumed.entries.map((entry) => (
-                <div key={entry.id} className="flex items-center gap-3 py-2 border-b border-zinc-800 last:border-0">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-zinc-100 text-sm font-medium truncate">{entry.foodName}</p>
-                    <p className="text-zinc-500 text-xs">
-                      {entry.amount}g · P{entry.protein}g F{entry.fat}g C{entry.carb}g
-                    </p>
+            <div className="flex flex-col gap-4">
+              {(["breakfast", "lunch", "dinner", "snack"] as const).map((type) => {
+                const typeEntries = consumed.entries.filter((e) => e.mealType === type);
+                if (typeEntries.length === 0) return null;
+                const typeLabel: Record<string, string> = {
+                  breakfast: "🌅 朝食",
+                  lunch: "☀️ 昼食",
+                  dinner: "🌙 夕食",
+                  snack: "🍎 間食",
+                };
+                const typeTotal = typeEntries.reduce((s, e) => s + e.calorie, 0);
+                return (
+                  <div key={type}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm font-semibold text-zinc-300">{typeLabel[type]}</span>
+                      <span className="text-xs text-zinc-500">{Math.round(typeTotal)} kcal</span>
+                    </div>
+                    <div className="flex flex-col gap-0">
+                      {typeEntries.map((entry) => (
+                        <div key={entry.id} className="flex items-center gap-3 py-2 border-b border-zinc-800/60 last:border-0">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-zinc-100 text-sm font-medium truncate">{entry.foodName}</p>
+                            <p className="text-zinc-500 text-xs">
+                              P{entry.protein}g · F{entry.fat}g · C{entry.carb}g
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-zinc-300 text-sm">{entry.calorie}kcal</p>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteEntry(entry)}
+                            className="text-zinc-600 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-zinc-300 text-sm">{entry.calorie}kcal</p>
-                  </div>
-                  <button
-                    onClick={() => handleDeleteEntry(entry)}
-                    className="text-zinc-600 hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </Card>
