@@ -1,11 +1,11 @@
-import { setDoc, getDoc, doc } from "firebase/firestore";
+import { setDoc, getDocs, doc, collection } from "firebase/firestore";
 import { db } from "./firebase/config";
 import { DEFAULT_FOODS } from "@/constants/foods";
 
 export async function seedFoods(): Promise<void> {
-  // Skip if already seeded (check the first deterministic doc)
-  const sentinel = await getDoc(doc(db, "foods", "default_0"));
-  if (sentinel.exists()) return;
+  const snap = await getDocs(collection(db, "foods"));
+  const existingDefaultCount = snap.docs.filter((d) => d.id.startsWith("default_")).length;
+  if (existingDefaultCount >= DEFAULT_FOODS.length) return;
 
   await Promise.all(
     DEFAULT_FOODS.map((food, i) =>
