@@ -44,7 +44,8 @@ export default function AddMealPage() {
   const favoriteIds = new Set(favorites.map((f) => f.id));
 
   function calcNutrition(food: Food, grams: number) {
-    const ratio = grams / (food.servingSize || 100);
+    const base = food.unit === "g" || food.unit === "ml" ? 100 : (food.servingSize || 1);
+    const ratio = grams / base;
     return {
       calorie: Math.round(food.calorie * ratio),
       protein: Math.round(food.protein * ratio * 10) / 10,
@@ -358,7 +359,7 @@ export default function AddMealPage() {
               <div className="flex-1 min-w-0">
                 <p className="text-zinc-100 font-medium truncate">{food.name}</p>
                 <p className="text-zinc-500 text-xs mt-0.5">
-                  P{food.protein}g · F{food.fat}g · C{food.carb}g · {food.calorie}kcal / {food.servingSize}{food.unit}
+                  P{food.protein}g · F{food.fat}g · C{food.carb}g · {food.calorie}kcal / {food.unit === "g" || food.unit === "ml" ? `100${food.unit}` : `${food.servingSize}${food.unit}`}
                 </p>
               </div>
               <button

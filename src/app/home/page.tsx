@@ -100,9 +100,6 @@ export default function HomePage() {
         {/* Header */}
         <div className="pt-12 pb-6">
           <p className="text-zinc-500 text-sm">{today}</p>
-          <h1 className="text-2xl font-bold text-zinc-100 mt-1">
-            こんにちは、{profile.displayName?.split(" ")[0] ?? "さん"} 👋
-          </h1>
         </div>
 
         {/* Calorie Ring */}
