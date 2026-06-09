@@ -4,12 +4,16 @@ import { DEFAULT_FOODS } from "@/constants/foods";
 
 export async function seedFoods(): Promise<void> {
   const snap = await getDocs(collection(db, "foods"));
-  const existingDefaultCount = snap.docs.filter((d) => d.id.startsWith("default_")).length;
-  if (existingDefaultCount >= DEFAULT_FOODS.length) return;
+  const existingNames = new Set(snap.docs.map((d) => d.data().name as string));
 
+  const missing = DEFAULT_FOODS.filter((food) => !existingNames.has(food.name));
+  if (missing.length === 0) return;
+
+  const allNames = DEFAULT_FOODS.map((f) => f.name);
   await Promise.all(
-    DEFAULT_FOODS.map((food, i) =>
-      setDoc(doc(db, "foods", `default_${i}`), food)
-    )
+    missing.map((food) => {
+      const i = allNames.indexOf(food.name);
+      return setDoc(doc(db, "foods", `default_${i}`), food);
+    })
   );
 }
