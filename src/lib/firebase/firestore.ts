@@ -68,25 +68,17 @@ export async function deleteUserData(uid: string): Promise<void> {
 // ─── Foods ───────────────────────────────────────────────────────────────────
 
 export async function getFoods(uid?: string): Promise<Food[]> {
-  const [defaultSnap, customSnap] = await Promise.all([
-    getDocs(collection(db, "foods")),
-    uid ? getDocs(collection(db, "users", uid, "customFoods")) : Promise.resolve(null),
-  ]);
+  const { DEFAULT_FOODS } = await import("@/constants/foods");
+  const defaultFoods: Food[] = DEFAULT_FOODS.map((food, i) => ({ id: `default_${i}`, ...food }));
 
-  // Deduplicate default foods (same name → keep default_ id)
-  const seen = new Map<string, Food>();
-  for (const d of defaultSnap.docs) {
-    const food = { id: d.id, ...d.data() } as Food;
-    if (!seen.has(food.name) || food.id.startsWith("default_")) {
-      seen.set(food.name, food);
-    }
-  }
-
+  const customSnap = uid
+    ? await getDocs(collection(db, "users", uid, "customFoods"))
+    : null;
   const customs = customSnap
     ? customSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Food))
     : [];
 
-  return [...Array.from(seen.values()), ...customs];
+  return [...defaultFoods, ...customs];
 }
 
 export async function addCustomFood(
