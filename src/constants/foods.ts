@@ -6,6 +6,7 @@ export const DEFAULT_FOODS: Omit<Food, "id">[] = [
   { name: "食パン(6枚切)", calorie: 158, protein: 5.6, fat: 2.6, carb: 28.0, unit: "枚", servingSize: 1, category: "grain" },
   { name: "オートミール", calorie: 380, protein: 13.7, fat: 5.7, carb: 69.1, unit: "g", servingSize: 40, category: "grain" },
   { name: "鶏むね肉(皮なし)", calorie: 108, protein: 22.3, fat: 1.5, carb: 0, unit: "g", servingSize: 150, category: "meat" },
+  { name: "ささみ", calorie: 98, protein: 23.0, fat: 0.8, carb: 0, unit: "g", servingSize: 100, category: "meat" },
   { name: "鶏もも肉(皮なし)", calorie: 127, protein: 19.0, fat: 5.0, carb: 0, unit: "g", servingSize: 150, category: "meat" },
   { name: "牛赤身肉", calorie: 193, protein: 21.3, fat: 11.7, carb: 0.6, unit: "g", servingSize: 100, category: "meat" },
   { name: "豚ロース(脂身なし)", calorie: 150, protein: 22.7, fat: 6.0, carb: 0.1, unit: "g", servingSize: 100, category: "meat" },
