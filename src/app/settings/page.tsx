@@ -11,7 +11,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { LogOut, Trash2, ChevronRight, Crown, Shield, FileText, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { LogOut, Trash2, ChevronRight, Shield, FileText, ChevronDown, ChevronUp } from "lucide-react";
 import type { Gender, Goal } from "@/types";
 
 export default function SettingsPage() {
@@ -64,11 +64,6 @@ export default function SettingsPage() {
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
-  }
-
-  async function handleRestorePurchase() {
-    toast("サブスクリプションを確認中...");
-    toast.success("購入情報を復元しました");
   }
 
   async function handleSaveBody() {
@@ -164,9 +159,6 @@ export default function SettingsPage() {
               <p className="text-zinc-100 font-semibold">{profile.displayName}</p>
               <p className="text-zinc-500 text-sm">{profile.email}</p>
             </div>
-            {profile.isPremium && (
-              <Crown size={18} className="text-yellow-400 ml-auto" />
-            )}
           </div>
         </Card>
 
@@ -291,34 +283,9 @@ export default function SettingsPage() {
           )}
         </Card>
 
-        {/* Subscription */}
-        {!profile.isPremium && (
-          <Card className="mb-4 border-yellow-500/30 bg-yellow-500/5">
-            <div className="flex items-center gap-2 mb-2">
-              <Crown size={16} className="text-yellow-400" />
-              <h2 className="font-bold text-yellow-400">Premiumにアップグレード</h2>
-            </div>
-            <p className="text-zinc-400 text-sm mb-3">AIアドバイス無制限 · AI分析 · コンビニ提案</p>
-            <Button size="sm" className="w-full bg-yellow-500 hover:bg-yellow-400 text-zinc-900">
-              アップグレード (月額 ¥500)
-            </Button>
-          </Card>
-        )}
-
         {/* Menu Items */}
         <Card className="mb-4">
           <div className="flex flex-col">
-            <button
-              onClick={handleRestorePurchase}
-              className="flex items-center justify-between py-3 border-b border-zinc-800 hover:text-emerald-400 transition-colors"
-            >
-              <div className="flex items-center gap-3 text-zinc-300">
-                <RefreshCw size={18} />
-                <span>購入を復元</span>
-              </div>
-              <ChevronRight size={16} className="text-zinc-600" />
-            </button>
-
             <Link
               href="/legal/terms"
               className="flex items-center justify-between py-3 border-b border-zinc-800 hover:text-emerald-400 transition-colors"

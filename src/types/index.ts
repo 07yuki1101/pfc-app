@@ -16,9 +16,6 @@ export interface UserProfile {
   targetProtein: number; // g
   targetFat: number; // g
   targetCarb: number; // g
-  isPremium: boolean;
-  aiUsageToday: number;
-  aiUsageDate: string; // YYYY-MM-DD
   createdAt: Date;
   updatedAt: Date;
 }
@@ -92,12 +89,3 @@ export interface FoodSuggestion {
   amount: number;
 }
 
-export interface AIUsageLimit {
-  free: number;
-  premium: number;
-}
-
-export const AI_USAGE_LIMIT: AIUsageLimit = {
-  free: 3,
-  premium: Infinity,
-};

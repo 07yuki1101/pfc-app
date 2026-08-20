@@ -28,7 +28,6 @@ export default function PrivacyPage() {
             <ul className="list-disc list-inside space-y-1">
               <li>サービスの提供・改善</li>
               <li>PFC目標値の計算</li>
-              <li>AIによる食事提案</li>
               <li>カスタマーサポート</li>
             </ul>
           </section>
@@ -38,8 +37,6 @@ export default function PrivacyPage() {
             <p>収集した情報は、法令に基づく場合を除き、第三者に提供しません。ただし、以下のサービスを利用します：</p>
             <ul className="list-disc list-inside space-y-1 mt-2">
               <li>Firebase（Google）: 認証・データ保存</li>
-              <li>Google Gemini API: AIアドバイス生成</li>
-              <li>RevenueCat: サブスクリプション管理</li>
             </ul>
           </section>
 

@@ -63,9 +63,6 @@ export default function RegisterPage() {
         targetProtein: pfc.protein,
         targetFat: pfc.fat,
         targetCarb: pfc.carb,
-        isPremium: false,
-        aiUsageToday: 0,
-        aiUsageDate: "",
       };
       await createUserProfile(user.uid, profile);
       setProfile({ ...profile, createdAt: new Date(), updatedAt: new Date() });

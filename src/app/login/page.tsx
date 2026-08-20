@@ -41,7 +41,7 @@ export default function LoginPage() {
           <span className="text-4xl">💪</span>
         </div>
         <h1 className="text-3xl font-bold text-zinc-100">PFC Manager</h1>
-        <p className="text-zinc-500 mt-2 text-sm">ボディメイクのためのAI食事管理</p>
+        <p className="text-zinc-500 mt-2 text-sm">ボディメイクのための食事管理</p>
       </div>
 
       {/* Auth Buttons */}

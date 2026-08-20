@@ -4,8 +4,8 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
-  title: "PFC Manager - AI食事管理",
-  description: "ボディメイクのためのAI PFC管理アプリ",
+  title: "PFC Manager",
+  description: "ボディメイクのためのPFC管理アプリ",
 };
 
 export const viewport: Viewport = {

@@ -1,31 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useMealStore } from "@/store/mealStore";
 import { useMealLog } from "@/hooks/useMealLog";
 import { calcRemaining } from "@/lib/pfc";
 import { getSuggestions } from "@/lib/suggestion";
-import { getAIAdvice } from "@/lib/ai";
-import { updateUserProfile } from "@/lib/firebase/firestore";
 import { PFCBars } from "@/components/ui/PFCBar";
 import { Card } from "@/components/ui/Card";
 import { BottomNav } from "@/components/ui/BottomNav";
-import Button from "@/components/ui/Button";
 import { deleteMealEntry } from "@/lib/firebase/firestore";
 import { todayString } from "@/lib/utils";
-import { MealEntry, AI_USAGE_LIMIT } from "@/types";
+import { MealEntry } from "@/types";
 import toast from "react-hot-toast";
-import { Trash2, Sparkles, Lock } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
 export default function HomePage() {
-  const { profile, setProfile } = useAuthStore();
+  const { profile } = useAuthStore();
   const { todayLog, foods } = useMealStore();
   const { refresh } = useMealLog();
-  const [aiAdvice, setAiAdvice] = useState<string | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
 
   if (!profile) return null;
 
@@ -50,36 +44,6 @@ export default function HomePage() {
 
   const today = format(new Date(), "M月d日 (EEE)", { locale: ja });
 
-  const canUseAI = () => {
-    const today = todayString();
-    if (profile.isPremium) return true;
-    if (profile.aiUsageDate !== today) return true;
-    return profile.aiUsageToday < AI_USAGE_LIMIT.free;
-  };
-
-  async function handleAI() {
-    if (!profile) return;
-    if (!canUseAI()) {
-      toast.error("本日のAI利用上限に達しました（無料: 3回/日）");
-      return;
-    }
-    setAiLoading(true);
-    try {
-      const advice = await getAIAdvice({ profile, remaining, dailyLog: consumed });
-      setAiAdvice(advice);
-
-      const today = todayString();
-      const newCount = profile.aiUsageDate === today ? profile.aiUsageToday + 1 : 1;
-      await updateUserProfile(profile.uid, { aiUsageToday: newCount, aiUsageDate: today });
-      setProfile({ ...profile, aiUsageToday: newCount, aiUsageDate: today });
-    } catch (e) {
-      console.error("AI error:", e);
-      toast.error("AIアドバイスの取得に失敗しました");
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
   async function handleDeleteEntry(entry: MealEntry) {
     try {
       await deleteMealEntry(profile!.uid, todayString(), entry.id);
@@ -89,10 +53,6 @@ export default function HomePage() {
       toast.error("削除に失敗しました");
     }
   }
-
-  const aiUsageLeft = profile.isPremium
-    ? "無制限"
-    : `残り ${AI_USAGE_LIMIT.free - (profile.aiUsageDate === todayString() ? profile.aiUsageToday : 0)}回`;
 
   return (
     <div className="min-h-screen bg-zinc-950 pb-24">
@@ -171,50 +131,6 @@ export default function HomePage() {
               ))}
             </div>
           )}
-        </Card>
-
-        {/* AI Advice */}
-        <Card className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-yellow-400" />
-              <h2 className="font-bold text-zinc-100">AIアドバイス</h2>
-              {!profile.isPremium && (
-                <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">
-                  {aiUsageLeft}
-                </span>
-              )}
-            </div>
-            {profile.isPremium && (
-              <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full">Premium</span>
-            )}
-          </div>
-
-          {aiAdvice ? (
-            <p className="text-zinc-300 text-sm leading-relaxed">{aiAdvice}</p>
-          ) : (
-            <p className="text-zinc-500 text-sm mb-3">
-              今日の残りPFCをもとにAIが最適な食事を提案します
-            </p>
-          )}
-
-          <Button
-            onClick={handleAI}
-            disabled={aiLoading || !canUseAI()}
-            variant={canUseAI() ? "primary" : "secondary"}
-            size="sm"
-            className="w-full mt-2"
-          >
-            {!canUseAI() ? (
-              <><Lock size={14} className="mr-1" /> 上限に達しました</>
-            ) : aiLoading ? (
-              "考え中..."
-            ) : aiAdvice ? (
-              "再度提案してもらう"
-            ) : (
-              <><Sparkles size={14} className="mr-1" /> AIに提案してもらう</>
-            )}
-          </Button>
         </Card>
 
         {/* Today's Meals */}
