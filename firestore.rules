@@ -11,8 +11,11 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Users: only the owner
+    // Users: only the owner (includes subcollections like supplements)
     match /users/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
@@ -23,6 +26,11 @@ service cloud.firestore {
 
     // Favorites: only the owner
     match /favorites/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Supplement logs: only the owner
+    match /supplementLogs/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
   }
