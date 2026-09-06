@@ -5,13 +5,15 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { signOutUser, deleteAccount } from "@/lib/firebase/auth";
 import { updateUserProfile } from "@/lib/firebase/firestore";
+import { auth } from "@/lib/firebase/config";
 import { calcPFCTarget } from "@/lib/pfc";
 import { Card } from "@/components/ui/Card";
 import { BottomNav } from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
+import Input from "@/components/ui/Input";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { LogOut, Trash2, ChevronRight, Shield, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { LogOut, Trash2, ChevronRight, Shield, FileText, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import type { Gender, Goal } from "@/types";
 
 export default function SettingsPage() {
@@ -41,6 +43,10 @@ export default function SettingsPage() {
     targetCarb: String(profile?.targetCarb ?? ""),
   });
   const [savingPFC, setSavingPFC] = useState(false);
+
+  // AI unlock code
+  const [unlockCode, setUnlockCode] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
 
   async function handleSignOut() {
     await signOutUser();
@@ -129,6 +135,31 @@ export default function SettingsPage() {
       toast.error("保存に失敗しました");
     } finally {
       setSavingPFC(false);
+    }
+  }
+
+  async function handleUnlock() {
+    if (!unlockCode.trim()) return;
+    setUnlocking(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      const res = await fetch("/api/ai-consult/unlock", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({ code: unlockCode.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "解除に失敗しました");
+      setProfile({ ...profile!, isPremium: true });
+      setUnlockCode("");
+      toast.success("AI相談の利用制限を解除しました");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "解除に失敗しました");
+    } finally {
+      setUnlocking(false);
     }
   }
 
@@ -280,6 +311,33 @@ export default function SettingsPage() {
                 {savingPFC ? "保存中..." : "保存"}
               </Button>
             </div>
+          )}
+        </Card>
+
+        {/* AI Consultation */}
+        <Card className="mb-4">
+          <div className="flex items-center gap-2 mb-1">
+            <Sparkles size={16} className="text-emerald-400" />
+            <h2 className="text-sm font-medium text-zinc-300">AIに相談</h2>
+          </div>
+          {profile.isPremium ? (
+            <p className="text-xs text-emerald-400 mt-1">無制限で利用できます</p>
+          ) : (
+            <>
+              <p className="text-xs text-zinc-500 mt-0.5 mb-3">無料プランは1日1回まで利用できます</p>
+              <div className="flex gap-2">
+                <Input
+                  value={unlockCode}
+                  onChange={(e) => setUnlockCode(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+                  placeholder="アンロックコード"
+                  className="py-2.5"
+                />
+                <Button size="sm" onClick={handleUnlock} disabled={unlocking || !unlockCode.trim()}>
+                  {unlocking ? "確認中..." : "解除"}
+                </Button>
+              </div>
+            </>
           )}
         </Card>
 

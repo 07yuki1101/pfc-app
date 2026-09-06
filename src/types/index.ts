@@ -16,6 +16,9 @@ export interface UserProfile {
   targetProtein: number; // g
   targetFat: number; // g
   targetCarb: number; // g
+  isPremium?: boolean;
+  aiUsageDate?: string; // YYYY-MM-DD, last date the free AI quota was used
+  aiUsageToday?: number;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -21,7 +21,7 @@ export function useAIConsult() {
     setError(null);
     try {
       const idToken = await auth.currentUser?.getIdToken();
-      if (!idToken) throw new Error("not authenticated");
+      if (!idToken) throw new Error("ログインが必要です");
 
       const consumed = todayLog ?? {
         totalCalorie: 0,
@@ -61,13 +61,13 @@ export function useAIConsult() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error ?? "failed");
+        throw new Error(err.error ?? "AIアドバイスの取得に失敗しました");
       }
       const data = (await res.json()) as ConsultationResult;
       setResult(data);
     } catch (e) {
       console.error("AI consult error:", e);
-      setError("AIアドバイスの取得に失敗しました");
+      setError(e instanceof Error ? e.message : "AIアドバイスの取得に失敗しました");
     } finally {
       setLoading(false);
     }
