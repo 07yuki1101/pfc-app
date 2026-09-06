@@ -11,6 +11,7 @@ import { BottomNav } from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { generateId, todayString } from "@/lib/utils";
+import { calcFoodNutrition } from "@/lib/pfc";
 import toast from "react-hot-toast";
 import { Search, Star, ArrowLeft, Check, PenLine, Bookmark } from "lucide-react";
 
@@ -43,23 +44,12 @@ export default function AddMealPage() {
 
   const favoriteIds = new Set(favorites.map((f) => f.id));
 
-  function calcNutrition(food: Food, grams: number) {
-    const base = food.unit === "g" || food.unit === "ml" ? 100 : (food.servingSize || 1);
-    const ratio = grams / base;
-    return {
-      calorie: Math.round(food.calorie * ratio),
-      protein: Math.round(food.protein * ratio * 10) / 10,
-      fat: Math.round(food.fat * ratio * 10) / 10,
-      carb: Math.round(food.carb * ratio * 10) / 10,
-    };
-  }
-
   async function handleAdd() {
     if (!selected || !profile || !amount) return;
     setLoading(true);
     try {
       const grams = parseFloat(amount);
-      const nutrition = calcNutrition(selected, grams);
+      const nutrition = calcFoodNutrition(selected, grams);
       await addMealEntry(profile.uid, todayString(), {
         id: generateId(),
         foodId: selected.id,
@@ -150,7 +140,7 @@ export default function AddMealPage() {
   // ── Selected food detail view ──
   if (selected) {
     const grams = parseFloat(amount) || selected.servingSize;
-    const nutrition = calcNutrition(selected, grams);
+    const nutrition = calcFoodNutrition(selected, grams);
 
     return (
       <div className="min-h-screen bg-zinc-950 pb-24">

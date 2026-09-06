@@ -14,7 +14,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./config";
-import { UserProfile, Food, MealEntry, DailyLog } from "@/types";
+import { UserProfile, Food, MealEntry, DailyLog, Supplement, SupplementLog } from "@/types";
 import { format } from "date-fns";
 
 // ─── User ────────────────────────────────────────────────────────────────────
@@ -61,6 +61,12 @@ export async function deleteUserData(uid: string): Promise<void> {
 
   const favsSnap = await getDocs(collection(db, "favorites", uid, "foods"));
   favsSnap.forEach((d) => batch.delete(d.ref));
+
+  const supplementsSnap = await getDocs(collection(db, "users", uid, "supplements"));
+  supplementsSnap.forEach((d) => batch.delete(d.ref));
+
+  const supplementLogsSnap = await getDocs(collection(db, "supplementLogs", uid, "dates"));
+  supplementLogsSnap.forEach((d) => batch.delete(d.ref));
 
   await batch.commit();
 }
@@ -172,4 +178,37 @@ export async function removeFavorite(
   foodId: string
 ): Promise<void> {
   await deleteDoc(doc(db, "favorites", uid, "foods", foodId));
+}
+
+// ─── Supplements ─────────────────────────────────────────────────────────────
+
+export async function getSupplements(uid: string): Promise<Supplement[]> {
+  const snap = await getDocs(collection(db, "users", uid, "supplements"));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Supplement));
+}
+
+export async function addSupplement(uid: string, name: string): Promise<string> {
+  const ref = doc(collection(db, "users", uid, "supplements"));
+  await setDoc(ref, { name });
+  return ref.id;
+}
+
+export async function deleteSupplement(uid: string, id: string): Promise<void> {
+  await deleteDoc(doc(db, "users", uid, "supplements", id));
+}
+
+export async function getSupplementLog(
+  uid: string,
+  date: string
+): Promise<SupplementLog> {
+  const snap = await getDoc(doc(db, "supplementLogs", uid, "dates", date));
+  if (!snap.exists()) return { date, checkedIds: [], note: "" };
+  return snap.data() as SupplementLog;
+}
+
+export async function saveSupplementLog(
+  uid: string,
+  log: SupplementLog
+): Promise<void> {
+  await setDoc(doc(db, "supplementLogs", uid, "dates", log.date), log);
 }

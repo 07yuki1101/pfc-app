@@ -1,4 +1,4 @@
-import { Gender, Goal, PFCTarget } from "@/types";
+import { Food, Gender, Goal, PFCTarget } from "@/types";
 
 export function calcPFCTarget(params: {
   gender: Gender;
@@ -52,6 +52,22 @@ export function calcPFCTarget(params: {
   const carb = Math.round((calories * carbRatio) / 4);
 
   return { calories, protein, fat, carb };
+}
+
+// food.calorie/protein/fat/carb are per 100g/ml for "g"/"ml" units,
+// or per servingSize (usually 1) for count-based units like "個"/"枚".
+export function calcFoodNutrition(
+  food: Pick<Food, "unit" | "servingSize" | "calorie" | "protein" | "fat" | "carb">,
+  amount: number
+) {
+  const base = food.unit === "g" || food.unit === "ml" ? 100 : (food.servingSize || 1);
+  const ratio = amount / base;
+  return {
+    calorie: Math.round(food.calorie * ratio),
+    protein: Math.round(food.protein * ratio * 10) / 10,
+    fat: Math.round(food.fat * ratio * 10) / 10,
+    carb: Math.round(food.carb * ratio * 10) / 10,
+  };
 }
 
 export function calcRemaining(

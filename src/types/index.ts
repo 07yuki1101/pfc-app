@@ -83,9 +83,26 @@ export interface PFCRemaining {
   carb: number;
 }
 
+export interface Supplement {
+  id: string;
+  name: string;
+}
+
+export interface SupplementLog {
+  date: string; // YYYY-MM-DD
+  checkedIds: string[];
+  note: string; // free text for items taken only that day
+}
+
 export interface FoodSuggestion {
   food: Food;
   reason: string;
   amount: number;
+  nutrition: {
+    calorie: number;
+    protein: number;
+    fat: number;
+    carb: number;
+  };
 }
 

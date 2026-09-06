@@ -1,4 +1,5 @@
 import { Food, FoodSuggestion, PFCTarget } from "@/types";
+import { calcFoodNutrition } from "./pfc";
 
 export function getSuggestions(
   remaining: PFCTarget,
@@ -10,10 +11,8 @@ export function getSuggestions(
     let score = 0;
     let reason = "";
 
-    const scaleFactor = 100 / (food.servingSize || 100);
-    const p = food.protein / scaleFactor;
-    const f = food.fat / scaleFactor;
-    const c = food.carb / scaleFactor;
+    const amount = food.servingSize || 1;
+    const { calorie, protein: p, fat: f, carb: c } = calcFoodNutrition(food, amount);
 
     if (remaining.protein > 20 && p > 15) {
       score += 3;
@@ -37,19 +36,20 @@ export function getSuggestions(
     }
 
     // Prefer foods that fit within remaining calories
-    const ratio = food.calorie / (remaining.calories || 1);
+    const ratio = calorie / (remaining.calories || 1);
     if (ratio > 0 && ratio <= 0.6) score += 1;
 
-    return { food, score, reason: reason || "バランスが良い" };
+    return { food, score, reason: reason || "バランスが良い", amount, nutrition: { calorie, protein: p, fat: f, carb: c } };
   });
 
   return scored
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
-    .map(({ food, reason }) => ({
+    .map(({ food, reason, amount, nutrition }) => ({
       food,
       reason,
-      amount: food.servingSize,
+      amount,
+      nutrition,
     }));
 }

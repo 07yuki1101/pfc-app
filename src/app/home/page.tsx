@@ -8,6 +8,7 @@ import { getSuggestions } from "@/lib/suggestion";
 import { PFCBars } from "@/components/ui/PFCBar";
 import { Card } from "@/components/ui/Card";
 import { BottomNav } from "@/components/ui/BottomNav";
+import { SupplementCard } from "@/components/SupplementCard";
 import { deleteMealEntry } from "@/lib/firebase/firestore";
 import { todayString } from "@/lib/utils";
 import { MealEntry } from "@/types";
@@ -115,7 +116,7 @@ export default function HomePage() {
             <p className="text-zinc-500 text-sm">目標達成済み！🎉 素晴らしいです！</p>
           ) : (
             <div className="flex flex-col gap-2">
-              {suggestions.map(({ food, reason, amount }) => (
+              {suggestions.map(({ food, reason, amount, nutrition }) => (
                 <div key={food.id} className="flex items-center justify-between bg-zinc-800 rounded-xl px-3 py-2.5">
                   <div>
                     <p className="text-zinc-100 font-medium text-sm">{food.name}</p>
@@ -123,15 +124,17 @@ export default function HomePage() {
                   </div>
                   <div className="text-right">
                     <p className="text-emerald-400 text-sm font-semibold">
-                      P {food.protein}g
+                      P {nutrition.protein}g
                     </p>
-                    <p className="text-zinc-500 text-xs">{food.calorie}kcal</p>
+                    <p className="text-zinc-500 text-xs">{nutrition.calorie}kcal</p>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </Card>
+
+        <SupplementCard />
 
         {/* Today's Meals */}
         <Card>
