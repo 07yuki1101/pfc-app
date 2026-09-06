@@ -13,9 +13,10 @@ import { deleteMealEntry } from "@/lib/firebase/firestore";
 import { todayString } from "@/lib/utils";
 import { MealEntry } from "@/types";
 import toast from "react-hot-toast";
-import { Trash2 } from "lucide-react";
+import { Trash2, Sparkles, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import Link from "next/link";
 
 export default function HomePage() {
   const { profile } = useAuthStore();
@@ -133,6 +134,21 @@ export default function HomePage() {
             </div>
           )}
         </Card>
+
+        <Link href="/ai-consult">
+          <Card className="mb-4 flex items-center justify-between hover:border-emerald-500/50 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+                <Sparkles size={18} className="text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-zinc-100 font-semibold text-sm">AIに相談</p>
+                <p className="text-zinc-500 text-xs">今日のPFCから食事を提案してもらう</p>
+              </div>
+            </div>
+            <ChevronRight size={18} className="text-zinc-600 shrink-0" />
+          </Card>
+        </Link>
 
         <SupplementCard />
 
