@@ -6,6 +6,12 @@ import { Toaster } from "react-hot-toast";
 export const metadata: Metadata = {
   title: "PFC Manager",
   description: "ボディメイクのためのPFC管理アプリ",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "PFC Manager",
+  },
 };
 
 export const viewport: Viewport = {
