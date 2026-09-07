@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useMealStore } from "@/store/mealStore";
 import { useMealLog } from "@/hooks/useMealLog";
@@ -10,23 +11,26 @@ import { Card } from "@/components/ui/Card";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { SupplementCard } from "@/components/SupplementCard";
 import { deleteMealEntry } from "@/lib/firebase/firestore";
-import { todayString } from "@/lib/utils";
+import { todayString, addDaysToDateString } from "@/lib/utils";
 import { MealEntry } from "@/types";
 import toast from "react-hot-toast";
-import { Trash2, Sparkles, ChevronRight } from "lucide-react";
-import { format } from "date-fns";
+import { Trash2, Sparkles, ChevronRight, ChevronLeft } from "lucide-react";
+import { format, parseISO } from "date-fns";
 import { ja } from "date-fns/locale";
 import Link from "next/link";
 
 export default function HomePage() {
   const { profile } = useAuthStore();
-  const { todayLog, foods } = useMealStore();
-  const { refresh } = useMealLog();
+  const { viewedLog, foods } = useMealStore();
+  const [viewedDate, setViewedDate] = useState(todayString());
+  const { refresh } = useMealLog(viewedDate);
 
   if (!profile) return null;
 
-  const consumed = todayLog ?? {
-    totalCalorie: 0, totalProtein: 0, totalFat: 0, totalCarb: 0, entries: [], date: todayString(),
+  const isToday = viewedDate === todayString();
+
+  const consumed = viewedLog ?? {
+    totalCalorie: 0, totalProtein: 0, totalFat: 0, totalCarb: 0, entries: [], date: viewedDate,
   };
 
   const target = {
@@ -37,18 +41,26 @@ export default function HomePage() {
   };
 
   const remaining = calcRemaining(target, consumed);
-  const suggestions = getSuggestions(remaining, foods);
+  const suggestions = isToday ? getSuggestions(remaining, foods) : [];
 
   const caloriePercent = Math.min(
     Math.round((consumed.totalCalorie / target.calories) * 100),
     100
   );
 
-  const today = format(new Date(), "M月d日 (EEE)", { locale: ja });
+  const displayDateLabel = format(parseISO(viewedDate), "M月d日 (EEE)", { locale: ja });
+
+  function goToPreviousDay() {
+    setViewedDate((d) => addDaysToDateString(d, -1));
+  }
+
+  function goToNextDay() {
+    setViewedDate((d) => (d === todayString() ? d : addDaysToDateString(d, 1)));
+  }
 
   async function handleDeleteEntry(entry: MealEntry) {
     try {
-      await deleteMealEntry(profile!.uid, todayString(), entry.id);
+      await deleteMealEntry(profile!.uid, viewedDate, entry.id);
       await refresh();
       toast.success("削除しました");
     } catch {
@@ -60,8 +72,28 @@ export default function HomePage() {
     <div className="min-h-screen bg-zinc-950 pb-24">
       <div className="max-w-md mx-auto px-4">
         {/* Header */}
-        <div className="pt-12 pb-6">
-          <p className="text-zinc-500 text-sm">{today}</p>
+        <div className="pt-12 pb-6 flex items-center justify-between">
+          <button
+            onClick={goToPreviousDay}
+            className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-900 active:bg-zinc-800 transition-colors"
+            aria-label="前日"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="flex flex-col items-center">
+            <p className={isToday ? "text-zinc-500 text-sm" : "text-zinc-100 text-sm font-semibold"}>
+              {displayDateLabel}
+            </p>
+            {!isToday && <p className="text-zinc-600 text-xs mt-0.5">過去のログ</p>}
+          </div>
+          <button
+            onClick={goToNextDay}
+            disabled={isToday}
+            className="w-9 h-9 flex items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-900 active:bg-zinc-800 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+            aria-label="翌日"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
 
         {/* Calorie Ring */}
@@ -87,7 +119,7 @@ export default function HomePage() {
 
             <div className="flex-1">
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-zinc-400">今日のカロリー</span>
+                <span className="text-zinc-400">{isToday ? "今日のカロリー" : "カロリー"}</span>
               </div>
               <div className="text-3xl font-bold text-zinc-100">
                 {Math.round(consumed.totalCalorie)}
@@ -107,33 +139,35 @@ export default function HomePage() {
           </div>
         </Card>
 
-        {/* Suggestions */}
-        <Card className="mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-bold text-zinc-100">次に食べるべきもの</h2>
-            <span className="text-xs text-zinc-600">固定ロジック</span>
-          </div>
-          {suggestions.length === 0 ? (
-            <p className="text-zinc-500 text-sm">目標達成済み！🎉 素晴らしいです！</p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {suggestions.map(({ food, reason, amount, nutrition }) => (
-                <div key={food.id} className="flex items-center justify-between bg-zinc-800 rounded-xl px-3 py-2.5">
-                  <div>
-                    <p className="text-zinc-100 font-medium text-sm">{food.name}</p>
-                    <p className="text-zinc-500 text-xs">{reason} · {amount}{food.unit}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-emerald-400 text-sm font-semibold">
-                      P {nutrition.protein}g
-                    </p>
-                    <p className="text-zinc-500 text-xs">{nutrition.calorie}kcal</p>
-                  </div>
-                </div>
-              ))}
+        {/* Suggestions（今日を表示中のときだけ意味があるため今日限定） */}
+        {isToday && (
+          <Card className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-bold text-zinc-100">次に食べるべきもの</h2>
+              <span className="text-xs text-zinc-600">固定ロジック</span>
             </div>
-          )}
-        </Card>
+            {suggestions.length === 0 ? (
+              <p className="text-zinc-500 text-sm">目標達成済み！🎉 素晴らしいです！</p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {suggestions.map(({ food, reason, amount, nutrition }) => (
+                  <div key={food.id} className="flex items-center justify-between bg-zinc-800 rounded-xl px-3 py-2.5">
+                    <div>
+                      <p className="text-zinc-100 font-medium text-sm">{food.name}</p>
+                      <p className="text-zinc-500 text-xs">{reason} · {amount}{food.unit}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-emerald-400 text-sm font-semibold">
+                        P {nutrition.protein}g
+                      </p>
+                      <p className="text-zinc-500 text-xs">{nutrition.calorie}kcal</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
 
         <Link href="/ai-consult">
           <Card className="mb-4 flex items-center justify-between hover:border-emerald-500/50 transition-colors">
@@ -152,9 +186,9 @@ export default function HomePage() {
 
         <SupplementCard />
 
-        {/* Today's Meals */}
+        {/* Meals for the viewed date */}
         <Card>
-          <h2 className="font-bold text-zinc-100 mb-3">今日の食事</h2>
+          <h2 className="font-bold text-zinc-100 mb-3">{isToday ? "今日の食事" : `${displayDateLabel}の食事`}</h2>
           {consumed.entries.length === 0 ? (
             <p className="text-zinc-500 text-sm">まだ記録がありません</p>
           ) : (

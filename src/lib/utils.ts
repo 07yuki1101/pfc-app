@@ -20,6 +20,17 @@ export function todayString(): string {
   return formatDate(new Date());
 }
 
+/**
+ * "YYYY-MM-DD" 形式の日付文字列に days 日を加算した文字列を返す。
+ * 負の値で過去方向に戻せる。
+ */
+export function addDaysToDateString(dateString: string, days: number): string {
+  const [y, m, d] = dateString.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + days);
+  return formatDate(date);
+}
+
 export function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
