@@ -46,14 +46,28 @@ export function getSuggestions(
     return { food, score, reason: reason || "バランスが良い", amount, nutrition: { calorie, protein: p, fat: f, carb: c } };
   });
 
-  return scored
-    .filter((s) => s.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map(({ food, reason, amount, nutrition }) => ({
-      food,
-      reason,
-      amount,
-      nutrition,
-    }));
+  const sorted = scored.filter((s) => s.score > 0).sort((a, b) => b.score - a.score);
+
+  // 同じチェーン（brand）の商品が上位を独占しないよう、1チェーンにつき最大2件までに制限する。
+  // 対象外（brandなしの通常食材）は制限しない。
+  const MAX_PER_BRAND = 2;
+  const brandCount = new Map<string, number>();
+  const picked: typeof sorted = [];
+  for (const item of sorted) {
+    const brand = item.food.brand;
+    if (brand) {
+      const count = brandCount.get(brand) ?? 0;
+      if (count >= MAX_PER_BRAND) continue;
+      brandCount.set(brand, count + 1);
+    }
+    picked.push(item);
+    if (picked.length >= 5) break;
+  }
+
+  return picked.map(({ food, reason, amount, nutrition }) => ({
+    food,
+    reason,
+    amount,
+    nutrition,
+  }));
 }

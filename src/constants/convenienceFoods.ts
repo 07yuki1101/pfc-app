@@ -14,6 +14,7 @@ export const CONVENIENCE_FOODS: Omit<Food, "id">[] = [
   { name: "セブンカフェ カフェラテ(S)", brand: "セブン-イレブン", calorie: 60, protein: 3.0, fat: 3.3, carb: 4.7, unit: "杯", servingSize: 1, category: "convenience" },
 
   // ── ローソン ──
+  { name: "サラダチキン(プレーン)", brand: "ローソン", calorie: 114, protein: 24.1, fat: 1.5, carb: 0.5, unit: "個", servingSize: 1, category: "convenience" },
   { name: "サラダチキンバー(プレーン)", brand: "ローソン", calorie: 54, protein: 11.6, fat: 0.6, carb: 0.3, unit: "本", servingSize: 1, category: "convenience" },
   { name: "からあげクン(レギュラー)", brand: "ローソン", calorie: 208, protein: 12.0, fat: 13.0, carb: 10.5, unit: "パック(5個)", servingSize: 1, category: "convenience" },
   { name: "ブランパン", brand: "ローソン", calorie: 179, protein: 8.0, fat: 10.0, carb: 13.0, unit: "個", servingSize: 1, category: "convenience" },
