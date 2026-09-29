@@ -35,6 +35,8 @@ export interface Food {
   category: FoodCategory;
   isCustom?: boolean;
   createdBy?: string;
+  /** コンビニ商品の場合の販売チェーン名（例: "セブン-イレブン"）。食材の場合は未設定 */
+  brand?: string;
 }
 
 export type FoodCategory =
@@ -46,6 +48,7 @@ export type FoodCategory =
   | "fruit"
   | "snack"
   | "supplement"
+  | "convenience"
   | "other";
 
 export interface MealEntry {

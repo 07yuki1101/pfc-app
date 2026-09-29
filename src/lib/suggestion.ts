@@ -39,6 +39,10 @@ export function getSuggestions(
     const ratio = calorie / (remaining.calories || 1);
     if (ratio > 0 && ratio <= 0.6) score += 1;
 
+    // コンビニ商品は買ってすぐ食べられる手軽さがあるため、同条件の食材と並んだ際に
+    // 埋もれないよう少しだけ優先する（他の栄養条件による加点より小さく保つ）
+    if (food.category === "convenience") score += 1;
+
     return { food, score, reason: reason || "バランスが良い", amount, nutrition: { calorie, protein: p, fat: f, carb: c } };
   });
 

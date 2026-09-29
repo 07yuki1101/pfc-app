@@ -75,7 +75,9 @@ export async function deleteUserData(uid: string): Promise<void> {
 
 export async function getFoods(uid?: string): Promise<Food[]> {
   const { DEFAULT_FOODS } = await import("@/constants/foods");
+  const { CONVENIENCE_FOODS } = await import("@/constants/convenienceFoods");
   const defaultFoods: Food[] = DEFAULT_FOODS.map((food, i) => ({ id: `default_${i}`, ...food }));
+  const conveniFoods: Food[] = CONVENIENCE_FOODS.map((food, i) => ({ id: `conveni_${i}`, ...food }));
 
   const customSnap = uid
     ? await getDocs(collection(db, "users", uid, "customFoods"))
@@ -84,7 +86,7 @@ export async function getFoods(uid?: string): Promise<Food[]> {
     ? customSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Food))
     : [];
 
-  return [...defaultFoods, ...customs];
+  return [...defaultFoods, ...conveniFoods, ...customs];
 }
 
 export async function addCustomFood(

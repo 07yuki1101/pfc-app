@@ -33,14 +33,19 @@ export default function AddMealPage() {
   const [amount, setAmount] = useState("");
   const [mealType, setMealType] = useState<MealType>("lunch");
   const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState<"search" | "favorites">("search");
+  const [tab, setTab] = useState<"search" | "favorites" | "convenience">("search");
   const [showManual, setShowManual] = useState(false);
   const [manual, setManual] = useState(emptyManual);
   const [saveToFavorites, setSaveToFavorites] = useState(false);
 
   const filteredFoods = query
-    ? foods.filter((f) => f.name.includes(query))
+    ? foods.filter((f) => f.name.includes(query) || (f.brand?.includes(query) ?? false))
     : foods;
+
+  const convenienceFoods = foods.filter((f) => f.category === "convenience");
+  const filteredConvenienceFoods = query
+    ? convenienceFoods.filter((f) => f.name.includes(query) || (f.brand?.includes(query) ?? false))
+    : convenienceFoods;
 
   const favoriteIds = new Set(favorites.map((f) => f.id));
 
@@ -135,7 +140,8 @@ export default function AddMealPage() {
     }
   }
 
-  const displayList = tab === "favorites" ? favorites : filteredFoods;
+  const displayList =
+    tab === "favorites" ? favorites : tab === "convenience" ? filteredConvenienceFoods : filteredFoods;
 
   // ── Selected food detail view ──
   if (selected) {
@@ -309,11 +315,12 @@ export default function AddMealPage() {
         <div className="flex bg-zinc-900 rounded-xl p-1 mb-4">
           {[
             { id: "search", label: "🔍 検索" },
+            { id: "convenience", label: "🏪 コンビニ" },
             { id: "favorites", label: "⭐ よく食べる" },
           ].map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id as "search" | "favorites")}
+              onClick={() => setTab(t.id as "search" | "favorites" | "convenience")}
               className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                 tab === t.id ? "bg-zinc-700 text-zinc-100" : "text-zinc-500"
               }`}
@@ -323,12 +330,12 @@ export default function AddMealPage() {
           ))}
         </div>
 
-        {tab === "search" && (
+        {(tab === "search" || tab === "convenience") && (
           <div className="relative mb-4">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
             <input
               type="text"
-              placeholder="食品名を検索..."
+              placeholder={tab === "convenience" ? "商品名・チェーン名で検索..." : "食品名を検索..."}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full bg-zinc-900 border border-zinc-700 rounded-xl pl-9 pr-4 py-3 text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500"
@@ -347,7 +354,14 @@ export default function AddMealPage() {
               }}
             >
               <div className="flex-1 min-w-0">
-                <p className="text-zinc-100 font-medium truncate">{food.name}</p>
+                <div className="flex items-center gap-1.5">
+                  {food.brand && (
+                    <span className="shrink-0 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 rounded px-1.5 py-0.5">
+                      {food.brand}
+                    </span>
+                  )}
+                  <p className="text-zinc-100 font-medium truncate">{food.name}</p>
+                </div>
                 <p className="text-zinc-500 text-xs mt-0.5">
                   P{food.protein}g · F{food.fat}g · C{food.carb}g · {food.calorie}kcal / {food.unit === "g" || food.unit === "ml" ? `100${food.unit}` : `${food.servingSize}${food.unit}`}
                 </p>
@@ -379,6 +393,12 @@ export default function AddMealPage() {
                 手動で入力する
               </button>
             </div>
+          )}
+
+          {displayList.length === 0 && tab === "convenience" && (
+            <p className="text-zinc-500 text-sm text-center py-8">
+              {query ? `「${query}」に一致する商品はありません` : "対応商品はありません"}
+            </p>
           )}
         </div>
 

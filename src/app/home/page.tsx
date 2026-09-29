@@ -153,7 +153,14 @@ export default function HomePage() {
                 {suggestions.map(({ food, reason, amount, nutrition }) => (
                   <div key={food.id} className="flex items-center justify-between bg-zinc-800 rounded-xl px-3 py-2.5">
                     <div>
-                      <p className="text-zinc-100 font-medium text-sm">{food.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        {food.brand && (
+                          <span className="shrink-0 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 rounded px-1.5 py-0.5">
+                            {food.brand}
+                          </span>
+                        )}
+                        <p className="text-zinc-100 font-medium text-sm">{food.name}</p>
+                      </div>
                       <p className="text-zinc-500 text-xs">{reason} · {amount}{food.unit}</p>
                     </div>
                     <div className="text-right">
