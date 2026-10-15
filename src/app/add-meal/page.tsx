@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMealStore } from "@/store/mealStore";
 import { useAuthStore } from "@/store/authStore";
@@ -13,7 +13,9 @@ import Input from "@/components/ui/Input";
 import { generateId, todayString } from "@/lib/utils";
 import { calcFoodNutrition } from "@/lib/pfc";
 import toast from "react-hot-toast";
-import { Search, Star, ArrowLeft, Check, PenLine, Bookmark } from "lucide-react";
+import { Search, Star, ArrowLeft, Check, PenLine, Bookmark, Camera, Loader2 } from "lucide-react";
+import { useNutritionLabelScan } from "@/hooks/useNutritionLabelScan";
+import type { NutritionLabelResult } from "@/lib/ai/nutritionLabel";
 
 const MEAL_TYPES: { value: MealType; label: string; emoji: string }[] = [
   { value: "breakfast", label: "朝食", emoji: "🌅" },
@@ -23,6 +25,20 @@ const MEAL_TYPES: { value: MealType; label: string; emoji: string }[] = [
 ];
 
 const emptyManual = { name: "", calorie: "", protein: "", fat: "", carb: "" };
+
+const MULTIPLIER_PRESETS = ["0.5", "1", "2"];
+
+// Scale label values by how much was eaten (e.g. label is per 100g, ate 200g → ×2).
+function scaledManual(base: NutritionLabelResult, name: string, multiplier: number) {
+  const round1 = (n: number) => String(Math.round(n * multiplier * 10) / 10);
+  return {
+    name,
+    calorie: String(Math.round(base.calorie * multiplier)),
+    protein: round1(base.protein),
+    fat: round1(base.fat),
+    carb: round1(base.carb),
+  };
+}
 
 export default function AddMealPage() {
   const router = useRouter();
@@ -37,6 +53,62 @@ export default function AddMealPage() {
   const [showManual, setShowManual] = useState(false);
   const [manual, setManual] = useState(emptyManual);
   const [saveToFavorites, setSaveToFavorites] = useState(false);
+  const [scanBase, setScanBase] = useState<NutritionLabelResult | null>(null);
+  const [multiplier, setMultiplier] = useState("1");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { scan, scanning } = useNutritionLabelScan();
+
+  function openManual() {
+    setManual(emptyManual);
+    setSaveToFavorites(false);
+    setScanBase(null);
+    setShowManual(true);
+  }
+
+  async function handleLabelPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const result = await scan(file);
+      setScanBase(result);
+      setMultiplier("1");
+      setManual((m) => scaledManual(result, result.name || m.name, 1));
+      if (!showManual) setSaveToFavorites(false);
+      setShowManual(true);
+      toast.success("読み取りました。数値を確認してください");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "読み取りに失敗しました");
+    }
+  }
+
+  function handleMultiplierChange(value: string) {
+    setMultiplier(value);
+    const m = parseFloat(value);
+    if (scanBase && m > 0) setManual((cur) => scaledManual(scanBase, cur.name, m));
+  }
+
+  const fileInput = (
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      capture="environment"
+      className="hidden"
+      onChange={handleLabelPhoto}
+    />
+  );
+
+  const scanButton = (
+    <button
+      onClick={() => fileInputRef.current?.click()}
+      disabled={scanning}
+      className="w-full flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl py-3 text-sm font-medium hover:bg-emerald-500/20 transition-colors disabled:opacity-60"
+    >
+      {scanning ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
+      {scanning ? "読み取り中..." : "栄養成分表示を撮影して入力"}
+    </button>
+  );
 
   const filteredFoods = query
     ? foods.filter((f) => f.name.includes(query) || (f.brand?.includes(query) ?? false))
@@ -224,6 +296,43 @@ export default function AddMealPage() {
             <h1 className="text-xl font-bold text-zinc-100">手動で入力</h1>
           </div>
 
+          {fileInput}
+          {scanBase ? (
+            <Card className="mb-4">
+              <p className="text-xs text-emerald-400 mb-3">
+                📷 {scanBase.basis ? `「${scanBase.basis}」` : "表示"}の値を読み取りました。数値が合っているか確認してください
+              </p>
+              <label className="text-xs text-zinc-500 block mb-1">食べた量（表示の何倍か）</label>
+              <div className="flex items-center gap-2">
+                {MULTIPLIER_PRESETS.map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => handleMultiplierChange(p)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                      multiplier === p ? "bg-emerald-500 text-white" : "bg-zinc-800 text-zinc-400"
+                    }`}
+                  >
+                    ×{p}
+                  </button>
+                ))}
+                <div className="flex-1 flex items-center bg-zinc-800 rounded-lg px-3">
+                  <span className="text-zinc-500 text-sm">×</span>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={multiplier}
+                    onChange={(e) => handleMultiplierChange(e.target.value)}
+                    className="flex-1 min-w-0 bg-transparent py-2 pl-1 text-zinc-100 text-sm outline-none"
+                  />
+                </div>
+              </div>
+              <div className="mt-3">{scanButton}</div>
+            </Card>
+          ) : (
+            <div className="mb-4">{scanButton}</div>
+          )}
+
           {/* Meal type */}
           <div className="flex gap-2 mb-4">
             {MEAL_TYPES.map((m) => (
@@ -343,6 +452,9 @@ export default function AddMealPage() {
           </div>
         )}
 
+        {fileInput}
+        {tab === "search" && <div className="mb-4">{scanButton}</div>}
+
         <div className="flex flex-col gap-2">
           {displayList.map((food) => (
             <div
@@ -386,7 +498,7 @@ export default function AddMealPage() {
             <div className="text-center py-8">
               <p className="text-zinc-500 text-sm mb-4">「{query}」は見つかりませんでした</p>
               <button
-                onClick={() => { setManual(emptyManual); setSaveToFavorites(false); setShowManual(true); }}
+                onClick={openManual}
                 className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl px-5 py-3 text-sm font-medium hover:bg-emerald-500/20 transition-colors"
               >
                 <PenLine size={16} />
@@ -405,7 +517,7 @@ export default function AddMealPage() {
         {/* Always-visible manual entry button at bottom of search list */}
         {tab === "search" && displayList.length > 0 && (
           <button
-            onClick={() => { setManual(emptyManual); setSaveToFavorites(false); setShowManual(true); }}
+            onClick={openManual}
             className="w-full mt-4 flex items-center justify-center gap-2 border border-zinc-700 rounded-xl py-3 text-zinc-500 text-sm hover:border-emerald-500/40 hover:text-emerald-400 transition-colors"
           >
             <PenLine size={15} />

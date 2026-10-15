@@ -29,13 +29,17 @@ export interface UserAiUsage {
   isPremium: boolean;
   aiUsageDate: string;
   aiUsageToday: number;
+  labelScanDate: string;
+  labelScanToday: number;
 }
 
 export async function getUserAiUsage(uid: string, idToken: string): Promise<UserAiUsage> {
   const res = await fetch(`${BASE_URL}/users/${uid}`, {
     headers: { Authorization: `Bearer ${idToken}` },
   });
-  if (!res.ok) return { isPremium: false, aiUsageDate: "", aiUsageToday: 0 };
+  if (!res.ok) {
+    return { isPremium: false, aiUsageDate: "", aiUsageToday: 0, labelScanDate: "", labelScanToday: 0 };
+  }
 
   const data = await res.json();
   const fields = data.fields ?? {};
@@ -43,6 +47,8 @@ export async function getUserAiUsage(uid: string, idToken: string): Promise<User
     isPremium: Boolean(decodeValue(fields.isPremium)),
     aiUsageDate: String(decodeValue(fields.aiUsageDate) ?? ""),
     aiUsageToday: Number(decodeValue(fields.aiUsageToday) ?? 0),
+    labelScanDate: String(decodeValue(fields.labelScanDate) ?? ""),
+    labelScanToday: Number(decodeValue(fields.labelScanToday) ?? 0),
   };
 }
 
@@ -62,6 +68,27 @@ export async function updateUserAiUsage(
       fields: {
         aiUsageDate: encodeValue(usage.aiUsageDate),
         aiUsageToday: encodeValue(usage.aiUsageToday),
+      },
+    }),
+  });
+}
+
+export async function updateUserLabelScanUsage(
+  uid: string,
+  idToken: string,
+  usage: { labelScanDate: string; labelScanToday: number }
+): Promise<void> {
+  const mask = "updateMask.fieldPaths=labelScanDate&updateMask.fieldPaths=labelScanToday";
+  await fetch(`${BASE_URL}/users/${uid}?${mask}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({
+      fields: {
+        labelScanDate: encodeValue(usage.labelScanDate),
+        labelScanToday: encodeValue(usage.labelScanToday),
       },
     }),
   });
