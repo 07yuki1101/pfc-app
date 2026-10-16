@@ -99,16 +99,17 @@ export default function AddMealPage() {
     />
   );
 
-  const scanButton = (
+  const renderScanButton = (label: string) => (
     <button
       onClick={() => fileInputRef.current?.click()}
       disabled={scanning}
       className="w-full flex items-center justify-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl py-3 text-sm font-medium hover:bg-emerald-500/20 transition-colors disabled:opacity-60"
     >
       {scanning ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
-      {scanning ? "読み取り中..." : "栄養成分表示を撮影して入力"}
+      {scanning ? "読み取り中..." : label}
     </button>
   );
+  const scanButton = renderScanButton("栄養成分表示を撮影して入力");
 
   const filteredFoods = query
     ? foods.filter((f) => f.name.includes(query) || (f.brand?.includes(query) ?? false))
@@ -453,7 +454,18 @@ export default function AddMealPage() {
         )}
 
         {fileInput}
-        {tab === "search" && <div className="mb-4">{scanButton}</div>}
+        {tab === "search" && (
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {renderScanButton("撮影して入力")}
+            <button
+              onClick={openManual}
+              className="w-full flex items-center justify-center gap-2 border border-zinc-700 rounded-xl py-3 text-zinc-300 text-sm font-medium hover:border-emerald-500/40 hover:text-emerald-400 transition-colors"
+            >
+              <PenLine size={16} />
+              手動で入力
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col gap-2">
           {displayList.map((food) => (
@@ -514,16 +526,6 @@ export default function AddMealPage() {
           )}
         </div>
 
-        {/* Always-visible manual entry button at bottom of search list */}
-        {tab === "search" && displayList.length > 0 && (
-          <button
-            onClick={openManual}
-            className="w-full mt-4 flex items-center justify-center gap-2 border border-zinc-700 rounded-xl py-3 text-zinc-500 text-sm hover:border-emerald-500/40 hover:text-emerald-400 transition-colors"
-          >
-            <PenLine size={15} />
-            候補にない食べ物を手動で入力
-          </button>
-        )}
       </div>
       <BottomNav />
     </div>
