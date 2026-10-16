@@ -315,7 +315,7 @@ export default function AddMealPage() {
                     ×{p}
                   </button>
                 ))}
-                <div className="flex-1 flex items-center bg-zinc-800 rounded-lg px-3">
+                <div className="flex-1 min-w-0 flex items-center bg-zinc-800 rounded-lg px-3">
                   <span className="text-zinc-500 text-sm">×</span>
                   <input
                     type="number"
@@ -323,7 +323,7 @@ export default function AddMealPage() {
                     min="0"
                     value={multiplier}
                     onChange={(e) => handleMultiplierChange(e.target.value)}
-                    className="flex-1 min-w-0 bg-transparent py-2 pl-1 text-zinc-100 text-sm outline-none"
+                    className="w-full min-w-0 bg-transparent py-2 pl-1 text-zinc-100 text-sm outline-none"
                   />
                 </div>
               </div>
