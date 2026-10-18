@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 
-const PUBLIC_PATHS = ["/", "/login", "/register", "/legal/terms", "/legal/privacy"];
+const PUBLIC_PATHS = ["/", "/login", "/register", "/legal/terms", "/legal/privacy", "/support"];
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   useAuthListener();

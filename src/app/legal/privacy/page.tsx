@@ -19,6 +19,8 @@ export default function PrivacyPage() {
               <li>アカウント情報（氏名、メールアドレス）</li>
               <li>プロフィール情報（年齢、身長、体重、目標）</li>
               <li>食事記録データ</li>
+              <li>栄養成分表示の読み取りのために撮影・選択された画像</li>
+              <li>サブスクリプションの購入状況</li>
               <li>アプリの利用ログ</li>
             </ul>
           </section>
@@ -37,6 +39,8 @@ export default function PrivacyPage() {
             <p>収集した情報は、法令に基づく場合を除き、第三者に提供しません。ただし、以下のサービスを利用します：</p>
             <ul className="list-disc list-inside space-y-1 mt-2">
               <li>Firebase（Google）: 認証・データ保存</li>
+              <li>OpenAI: AI相談（その日の食事記録とPFCの目標・残量を送信）と、栄養成分表示の読み取り（撮影した画像を送信）。送信した内容は回答の生成にのみ使われ、画像は本サービスでは保存しません</li>
+              <li>RevenueCat: サブスクリプションの購入状況の管理（ユーザーIDと購入履歴）</li>
             </ul>
           </section>
 
@@ -55,7 +59,7 @@ export default function PrivacyPage() {
             <p>プライバシーに関するお問い合わせは 07yuki1101@gmail.com までご連絡ください。</p>
           </section>
 
-          <p className="text-zinc-600 text-xs mt-8">最終更新: 2026年5月27日</p>
+          <p className="text-zinc-600 text-xs mt-8">最終更新: 2026年10月18日</p>
         </div>
       </div>
     </div>
