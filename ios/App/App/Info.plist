@@ -79,5 +79,7 @@
 	<string>食品パッケージの栄養成分表示を撮影して、PFCを自動入力するために使用します。</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>栄養成分表示の写真を選んで、PFCを自動入力するために使用します。</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
