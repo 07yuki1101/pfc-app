@@ -5,6 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { getUserProfile } from "@/lib/firebase/firestore";
 import { useAuthStore } from "@/store/authStore";
+import { configurePurchases, getNativePremium } from "@/lib/premium/client";
 
 export function useAuthListener() {
   const { setUser, setProfile, setLoading } = useAuthStore();
@@ -17,7 +18,10 @@ export function useAuthListener() {
         try {
           const profile = await getUserProfile(user.uid);
           console.log("[Auth] profile:", profile ? "found" : "not found");
-          setProfile(profile);
+          // In the iOS app, the App Store subscription decides premium
+          await configurePurchases(user.uid);
+          const nativePremium = await getNativePremium().catch(() => null);
+          setProfile(profile && nativePremium ? { ...profile, isPremium: true } : profile);
         } catch (e) {
           console.error("[Auth] profile fetch error:", e);
           setProfile(null);

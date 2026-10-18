@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { signOutUser, deleteAccount } from "@/lib/firebase/auth";
@@ -15,6 +15,9 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 import { LogOut, Trash2, ChevronRight, Shield, FileText, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import type { Gender, Goal } from "@/types";
+import { FREE_DAILY_LIMIT, FREE_LABEL_SCAN_DAILY_LIMIT } from "@/lib/ai/limits";
+import { PREMIUM_MONTHLY_PRICE_JPY } from "@/lib/premium/config";
+import { isNativeApp, purchaseMonthly, restorePurchases, PurchaseCancelledError } from "@/lib/premium/client";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -47,6 +50,47 @@ export default function SettingsPage() {
   // AI unlock code
   const [unlockCode, setUnlockCode] = useState("");
   const [unlocking, setUnlocking] = useState(false);
+  const [showUnlockCode, setShowUnlockCode] = useState(false);
+
+  // Subscription
+  const [native, setNative] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+
+  useEffect(() => {
+    isNativeApp().then(setNative);
+  }, []);
+
+  async function handleSubscribe() {
+    setPurchasing(true);
+    try {
+      await purchaseMonthly();
+      setProfile({ ...profile!, isPremium: true });
+      toast.success("プレミアムに登録しました！");
+    } catch (e) {
+      if (!(e instanceof PurchaseCancelledError)) {
+        toast.error(e instanceof Error ? e.message : "購入に失敗しました");
+      }
+    } finally {
+      setPurchasing(false);
+    }
+  }
+
+  async function handleRestore() {
+    setPurchasing(true);
+    try {
+      const restored = await restorePurchases();
+      if (restored) {
+        setProfile({ ...profile!, isPremium: true });
+        toast.success("購入を復元しました");
+      } else {
+        toast.error("復元できる購入が見つかりませんでした");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "復元に失敗しました");
+    } finally {
+      setPurchasing(false);
+    }
+  }
 
   async function handleSignOut() {
     await signOutUser();
@@ -155,7 +199,7 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error(data.error ?? "解除に失敗しました");
       setProfile({ ...profile!, isPremium: true });
       setUnlockCode("");
-      toast.success("AI相談の利用制限を解除しました");
+      toast.success("プレミアムを有効にしました");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "解除に失敗しました");
     } finally {
@@ -314,30 +358,91 @@ export default function SettingsPage() {
           )}
         </Card>
 
-        {/* AI Consultation */}
+        {/* Premium */}
         <Card className="mb-4">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles size={16} className="text-emerald-400" />
-            <h2 className="text-sm font-medium text-zinc-300">AIに相談</h2>
+            <h2 className="text-sm font-medium text-zinc-300">プレミアム</h2>
+            {profile.isPremium && (
+              <span className="ml-auto text-[10px] font-medium text-emerald-400 bg-emerald-500/10 rounded px-1.5 py-0.5">
+                登録中
+              </span>
+            )}
           </div>
+
+          <table className="w-full text-xs mt-3 mb-4">
+            <thead>
+              <tr className="text-zinc-500">
+                <th className="text-left font-normal pb-2" />
+                <th className="font-normal pb-2 w-20">無料</th>
+                <th className="font-medium pb-2 w-24 text-emerald-400">プレミアム</th>
+              </tr>
+            </thead>
+            <tbody className="text-zinc-300">
+              <tr className="border-t border-zinc-800">
+                <td className="py-2">AIに相談</td>
+                <td className="text-center text-zinc-500">1日{FREE_DAILY_LIMIT}回</td>
+                <td className="text-center text-emerald-400 font-medium">無制限</td>
+              </tr>
+              <tr className="border-t border-zinc-800">
+                <td className="py-2">成分表示の撮影読み取り</td>
+                <td className="text-center text-zinc-500">1日{FREE_LABEL_SCAN_DAILY_LIMIT}回</td>
+                <td className="text-center text-emerald-400 font-medium">無制限</td>
+              </tr>
+              <tr className="border-t border-zinc-800">
+                <td className="py-2">食事記録・検索・PFC管理</td>
+                <td className="text-center text-zinc-500">○</td>
+                <td className="text-center text-emerald-400 font-medium">○</td>
+              </tr>
+            </tbody>
+          </table>
+
           {profile.isPremium ? (
-            <p className="text-xs text-emerald-400 mt-1">無制限で利用できます</p>
-          ) : (
+            <p className="text-xs text-emerald-400">AI相談と撮影読み取りを無制限で利用できます</p>
+          ) : native ? (
             <>
-              <p className="text-xs text-zinc-500 mt-0.5 mb-3">無料プランは1日1回まで利用できます</p>
-              <div className="flex gap-2">
-                <Input
-                  value={unlockCode}
-                  onChange={(e) => setUnlockCode(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-                  placeholder="アンロックコード"
-                  className="py-2.5"
-                />
-                <Button size="sm" onClick={handleUnlock} disabled={unlocking || !unlockCode.trim()}>
-                  {unlocking ? "確認中..." : "解除"}
-                </Button>
-              </div>
+              <Button onClick={handleSubscribe} disabled={purchasing} className="w-full">
+                {purchasing ? "処理中..." : `月額¥${PREMIUM_MONTHLY_PRICE_JPY}で登録する`}
+              </Button>
+              <p className="text-[11px] leading-relaxed text-zinc-500 mt-3">
+                1ヶ月ごとの自動更新です。更新日の24時間前までに解約しない限り、同じ料金で自動更新されます。
+                解約はiPhoneの「設定」→ Apple ID →「サブスクリプション」から行えます。
+                <Link href="/legal/terms" className="underline">利用規約</Link>・
+                <Link href="/legal/privacy" className="underline">プライバシーポリシー</Link>
+              </p>
+              <button
+                onClick={handleRestore}
+                disabled={purchasing}
+                className="w-full text-xs text-zinc-500 mt-3 py-1"
+              >
+                購入を復元する
+              </button>
             </>
+          ) : (
+            <p className="text-xs text-zinc-500">プレミアムへの登録はiPhoneアプリから行えます</p>
+          )}
+
+          {!profile.isPremium && (
+            <div className="mt-3 pt-3 border-t border-zinc-800">
+              {showUnlockCode ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={unlockCode}
+                    onChange={(e) => setUnlockCode(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+                    placeholder="アンロックコード"
+                    className="py-2.5"
+                  />
+                  <Button size="sm" onClick={handleUnlock} disabled={unlocking || !unlockCode.trim()}>
+                    {unlocking ? "確認中..." : "解除"}
+                  </Button>
+                </div>
+              ) : (
+                <button onClick={() => setShowUnlockCode(true)} className="text-xs text-zinc-600">
+                  コードをお持ちの方
+                </button>
+              )}
+            </div>
           )}
         </Card>
 

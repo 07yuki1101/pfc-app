@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "com.pfcapp.mobile",
-  appName: "PFC Manager",
+  appId: "com.apptaro.pfc",
+  appName: "PFC Log",
   webDir: "out",
   server: {
     androidScheme: "https",

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { isPremiumUser } from "@/lib/premium/server";
+import { PREMIUM_MONTHLY_PRICE_JPY } from "@/lib/premium/config";
 import { verifyFirebaseIdToken } from "@/lib/firebase/verifyIdToken";
 import { getUserAiUsage, updateUserAiUsage } from "@/lib/firebase/firestoreRest";
 import { buildConsultationPrompt } from "@/lib/ai/prompt";
@@ -27,12 +29,13 @@ export async function POST(req: Request) {
   }
 
   const usage = await getUserAiUsage(uid, idToken);
+  const premium = await isPremiumUser(uid, usage.isPremium);
   const today = todayString();
   const usedToday = usage.aiUsageDate === today ? usage.aiUsageToday : 0;
 
-  if (!usage.isPremium && usedToday >= FREE_DAILY_LIMIT) {
+  if (!premium && usedToday >= FREE_DAILY_LIMIT) {
     return NextResponse.json(
-      { error: `本日の利用上限（${FREE_DAILY_LIMIT}回）に達しました。また明日お試しください` },
+      { error: `本日の利用上限（${FREE_DAILY_LIMIT}回）に達しました。プレミアム（月¥${PREMIUM_MONTHLY_PRICE_JPY}）なら無制限で使えます` },
       { status: 429 }
     );
   }
@@ -40,7 +43,7 @@ export async function POST(req: Request) {
   try {
     const prompt = buildConsultationPrompt(payload);
     const result = await generateConsultation(prompt);
-    if (!usage.isPremium) {
+    if (!premium) {
       await updateUserAiUsage(uid, idToken, {
         aiUsageDate: today,
         aiUsageToday: usedToday + 1,

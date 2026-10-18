@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { isPremiumUser } from "@/lib/premium/server";
+import { PREMIUM_MONTHLY_PRICE_JPY } from "@/lib/premium/config";
 import { verifyFirebaseIdToken } from "@/lib/firebase/verifyIdToken";
 import { getUserAiUsage, updateUserLabelScanUsage } from "@/lib/firebase/firestoreRest";
 import { readNutritionLabel } from "@/lib/ai/nutritionLabel";
@@ -26,12 +28,13 @@ export async function POST(req: Request) {
   }
 
   const usage = await getUserAiUsage(uid, idToken);
+  const premium = await isPremiumUser(uid, usage.isPremium);
   const today = todayString();
   const usedToday = usage.labelScanDate === today ? usage.labelScanToday : 0;
 
-  if (!usage.isPremium && usedToday >= FREE_LABEL_SCAN_DAILY_LIMIT) {
+  if (!premium && usedToday >= FREE_LABEL_SCAN_DAILY_LIMIT) {
     return NextResponse.json(
-      { error: `本日の撮影読み取りの上限（${FREE_LABEL_SCAN_DAILY_LIMIT}回）に達しました。また明日お試しください` },
+      { error: `本日の撮影読み取りの上限（${FREE_LABEL_SCAN_DAILY_LIMIT}回）に達しました。プレミアム（月¥${PREMIUM_MONTHLY_PRICE_JPY}）なら無制限で使えます` },
       { status: 429 }
     );
   }
@@ -39,7 +42,7 @@ export async function POST(req: Request) {
   try {
     const result = await readNutritionLabel(image);
     // Count every attempt that reached the AI, including unreadable photos.
-    if (!usage.isPremium) {
+    if (!premium) {
       await updateUserLabelScanUsage(uid, idToken, {
         labelScanDate: today,
         labelScanToday: usedToday + 1,

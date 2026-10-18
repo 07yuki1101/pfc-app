@@ -13,11 +13,12 @@
     "cap:open:ios": "cap open ios"
   },
   "dependencies": {
-    "@capacitor/camera": "^7.0.1",
-    "@capacitor/core": "^7.2.0",
-    "@capacitor/ios": "^7.2.0",
+    "@capacitor/camera": "^8.2.5",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.0.1",
+    "@revenuecat/purchases-capacitor": "^13.7.4",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "firebase": "^11.8.1",
@@ -33,7 +34,7 @@
     "zustand": "^5.0.4"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.2.0",
+    "@capacitor/cli": "^8.5.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
