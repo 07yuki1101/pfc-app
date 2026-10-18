@@ -13,6 +13,7 @@
     "cap:open:ios": "cap open ios"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "^8.5.2",
     "@capacitor/camera": "^8.2.5",
     "@capacitor/core": "^8.5.3",
     "@capacitor/ios": "^8.5.3",
@@ -21,7 +22,7 @@
     "@revenuecat/purchases-capacitor": "^13.7.4",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "firebase": "^11.8.1",
+    "firebase": "^12.19.0",
     "framer-motion": "^12.15.0",
     "lucide-react": "^0.514.0",
     "next": "^16.2.6",

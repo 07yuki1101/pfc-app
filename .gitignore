@@ -18,7 +18,6 @@ yarn-debug.log*
 yarn-error.log*
 
 # iOS
-ios/
 
 # Misc
 .DS_Store
