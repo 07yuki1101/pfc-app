@@ -4,13 +4,13 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
-  title: "PFC Manager",
+  title: "PFC Log",
   description: "ボディメイクのためのPFC管理アプリ",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "PFC Manager",
+    title: "PFC Log",
   },
 };
 

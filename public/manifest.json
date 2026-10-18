@@ -1,6 +1,6 @@
 {
-  "name": "PFC Manager",
-  "short_name": "PFC Manager",
+  "name": "PFC Log",
+  "short_name": "PFC Log",
   "description": "ボディメイクのためのPFC管理アプリ",
   "start_url": "/",
   "scope": "/",

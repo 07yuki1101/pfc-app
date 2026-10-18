@@ -15,7 +15,7 @@ export default function TermsPage() {
         <div className="prose prose-invert prose-sm text-zinc-400 space-y-4">
           <section>
             <h2 className="text-zinc-200 font-semibold text-base">第1条（適用）</h2>
-            <p>本規約は、PFC Manager（以下「本サービス」）の利用に関する条件を定めるものです。ユーザーは本規約に同意した上で本サービスを利用するものとします。</p>
+            <p>本規約は、PFC Log（以下「本サービス」）の利用に関する条件を定めるものです。ユーザーは本規約に同意した上で本サービスを利用するものとします。</p>
           </section>
 
           <section>

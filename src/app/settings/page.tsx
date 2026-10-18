@@ -525,7 +525,7 @@ export default function SettingsPage() {
           )}
         </div>
 
-        <p className="text-center text-zinc-700 text-xs mt-6">PFC Manager v0.1.0</p>
+        <p className="text-center text-zinc-700 text-xs mt-6">PFC Log v0.1.0</p>
       </div>
       <BottomNav />
     </div>

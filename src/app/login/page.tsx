@@ -40,7 +40,7 @@ export default function LoginPage() {
         <div className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-emerald-500/30">
           <span className="text-4xl">💪</span>
         </div>
-        <h1 className="text-3xl font-bold text-zinc-100">PFC Manager</h1>
+        <h1 className="text-3xl font-bold text-zinc-100">PFC Log</h1>
         <p className="text-zinc-500 mt-2 text-sm">ボディメイクのための食事管理</p>
       </div>
 
