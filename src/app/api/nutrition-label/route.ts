@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isPremiumUser } from "@/lib/premium/server";
 import { PREMIUM_MONTHLY_PRICE_JPY } from "@/lib/premium/config";
-import { verifyFirebaseIdToken } from "@/lib/firebase/verifyIdToken";
+import { verifyFirebaseUser } from "@/lib/firebase/verifyIdToken";
 import { getUserAiUsage, updateUserLabelScanUsage } from "@/lib/firebase/firestoreRest";
 import { readNutritionLabel } from "@/lib/ai/nutritionLabel";
 import { FREE_LABEL_SCAN_DAILY_LIMIT } from "@/lib/ai/limits";
@@ -12,7 +12,8 @@ const MAX_IMAGE_CHARS = 4_000_000;
 
 export async function POST(req: Request) {
   const idToken = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  const uid = idToken ? await verifyFirebaseIdToken(idToken) : null;
+  const user = idToken ? await verifyFirebaseUser(idToken) : null;
+  const uid = user?.uid ?? null;
   if (!uid || !idToken) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
   }
 
   const usage = await getUserAiUsage(uid, idToken);
-  const premium = await isPremiumUser(uid, usage.isPremium);
+  const premium = await isPremiumUser(uid, usage.isPremium, user?.verifiedEmail ?? null);
   const today = todayString();
   const usedToday = usage.labelScanDate === today ? usage.labelScanToday : 0;
 

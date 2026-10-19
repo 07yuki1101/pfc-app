@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isPremiumUser } from "@/lib/premium/server";
 import { PREMIUM_MONTHLY_PRICE_JPY } from "@/lib/premium/config";
-import { verifyFirebaseIdToken } from "@/lib/firebase/verifyIdToken";
+import { verifyFirebaseUser } from "@/lib/firebase/verifyIdToken";
 import { getUserAiUsage, updateUserAiUsage } from "@/lib/firebase/firestoreRest";
 import { buildConsultationPrompt } from "@/lib/ai/prompt";
 import { generateConsultation } from "@/lib/ai/provider";
@@ -12,7 +12,8 @@ import { todayString } from "@/lib/utils";
 
 export async function POST(req: Request) {
   const idToken = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  const uid = idToken ? await verifyFirebaseIdToken(idToken) : null;
+  const user = idToken ? await verifyFirebaseUser(idToken) : null;
+  const uid = user?.uid ?? null;
   if (!uid || !idToken) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
   }
 
   const usage = await getUserAiUsage(uid, idToken);
-  const premium = await isPremiumUser(uid, usage.isPremium);
+  const premium = await isPremiumUser(uid, usage.isPremium, user?.verifiedEmail ?? null);
   const today = todayString();
   const usedToday = usage.aiUsageDate === today ? usage.aiUsageToday : 0;
 

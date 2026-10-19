@@ -4,7 +4,7 @@
 // (App Store subscriptions + promotional grants from unlock codes). The
 // Firestore `isPremium` flag is client-writable under the current rules, so it
 // is only used as a fallback before RevenueCat is configured.
-import { PREMIUM_ENTITLEMENT_ID } from "./config";
+import { PREMIUM_ENTITLEMENT_ID, isOwnerEmail } from "./config";
 
 const RC_API = "https://api.revenuecat.com/v1";
 
@@ -42,7 +42,12 @@ export async function grantPromotionalPremium(uid: string): Promise<void> {
   if (!res.ok) throw new Error(`RevenueCat ${res.status}`);
 }
 
-export async function isPremiumUser(uid: string, firestoreIsPremium: boolean): Promise<boolean> {
+export async function isPremiumUser(
+  uid: string,
+  firestoreIsPremium: boolean,
+  verifiedEmail: string | null
+): Promise<boolean> {
+  if (isOwnerEmail(verifiedEmail)) return true;
   if (!isRevenueCatConfigured()) return firestoreIsPremium;
   try {
     return await hasPremiumEntitlement(uid);
