@@ -56,7 +56,8 @@ export async function purchaseMonthly(): Promise<void> {
   const Purchases = await purchases();
   if (!Purchases) throw new Error("購入はiOSアプリから行えます");
   const offerings = await Purchases.getOfferings();
-  const pkg = offerings.current?.monthly ?? offerings.current?.availablePackages[0];
+  const offering = offerings.current ?? offerings.all["default"];
+  const pkg = offering?.monthly ?? offering?.availablePackages[0];
   if (!pkg) throw new Error("購入できるプランが見つかりませんでした");
   try {
     await Purchases.purchasePackage({ aPackage: pkg });
