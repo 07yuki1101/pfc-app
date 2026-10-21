@@ -6,7 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { signOutUser, deleteAccount } from "@/lib/firebase/auth";
 import { updateUserProfile } from "@/lib/firebase/firestore";
 import { auth } from "@/lib/firebase/config";
-import { calcPFCTarget } from "@/lib/pfc";
+import { calcPFCTarget, ACTIVITY_OPTIONS, PACE_OPTIONS } from "@/lib/pfc";
 import { Card } from "@/components/ui/Card";
 import { BottomNav } from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
@@ -14,7 +14,7 @@ import Input from "@/components/ui/Input";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { LogOut, Trash2, ChevronRight, Shield, FileText, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import type { Gender, Goal } from "@/types";
+import type { ActivityLevel, Gender, Goal, Pace } from "@/types";
 import { FREE_DAILY_LIMIT, FREE_LABEL_SCAN_DAILY_LIMIT } from "@/lib/ai/limits";
 import { PREMIUM_MONTHLY_PRICE_JPY } from "@/lib/premium/config";
 import { isNativeApp, purchaseMonthly, restorePurchases, PurchaseCancelledError } from "@/lib/premium/client";
@@ -34,6 +34,9 @@ export default function SettingsPage() {
     weight: String(profile?.weight ?? ""),
     targetWeight: String(profile?.targetWeight ?? ""),
     goal: (profile?.goal ?? "maintain") as Goal,
+    activityLevel: (profile?.activityLevel ?? "moderate") as ActivityLevel,
+    pace: (profile?.pace ?? "normal") as Pace,
+    bodyFat: profile?.bodyFat != null ? String(profile.bodyFat) : "",
   });
   const [savingBody, setSavingBody] = useState(false);
 
@@ -126,9 +129,17 @@ export default function SettingsPage() {
       toast.error("すべての項目を入力してください");
       return;
     }
+    const bodyFat = bodyForm.bodyFat.trim() ? parseFloat(bodyForm.bodyFat) : undefined;
+    if (bodyFat !== undefined && (isNaN(bodyFat) || bodyFat < 3 || bodyFat > 60)) {
+      toast.error("体脂肪率は3〜60の数値で入力してください");
+      return;
+    }
     setSavingBody(true);
     try {
-      const pfc = calcPFCTarget({ gender: bodyForm.gender, age, height, weight, targetWeight, goal: bodyForm.goal });
+      const pfc = calcPFCTarget({
+        gender: bodyForm.gender, age, height, weight, targetWeight, goal: bodyForm.goal,
+        activityLevel: bodyForm.activityLevel, pace: bodyForm.pace, bodyFat,
+      });
       const updates = {
         gender: bodyForm.gender,
         age,
@@ -136,6 +147,9 @@ export default function SettingsPage() {
         weight,
         targetWeight,
         goal: bodyForm.goal,
+        activityLevel: bodyForm.activityLevel,
+        pace: bodyForm.pace,
+        bodyFat: bodyFat ?? null,
         targetCalories: pfc.calories,
         targetProtein: pfc.protein,
         targetFat: pfc.fat,
@@ -276,6 +290,7 @@ export default function SettingsPage() {
                 { key: "height", label: "身長", unit: "cm", type: "number" },
                 { key: "weight", label: "現在の体重", unit: "kg", type: "number" },
                 { key: "targetWeight", label: "目標体重", unit: "kg", type: "number" },
+                { key: "bodyFat", label: "体脂肪率（任意・分かれば）", unit: "%", type: "number" },
               ].map(({ key, label, unit }) => (
                 <div key={key}>
                   <label className="text-xs text-zinc-500 mb-1 block">{label}</label>
@@ -306,6 +321,62 @@ export default function SettingsPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Activity level */}
+              <div>
+                <label className="text-xs text-zinc-500 mb-1 block">ふだんの活動量</label>
+                <div className="flex flex-col gap-1.5">
+                  {ACTIVITY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setBodyForm((f) => ({ ...f, activityLevel: opt.value }))}
+                      className={`text-left px-3 py-2 rounded-xl transition-colors ${bodyForm.activityLevel === opt.value ? "bg-emerald-500 text-white" : "bg-zinc-800 text-zinc-400"}`}
+                    >
+                      <span className="text-sm font-medium">{opt.label}</span>
+                      <span className={`text-xs ml-2 ${bodyForm.activityLevel === opt.value ? "text-emerald-50" : "text-zinc-500"}`}>{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Pace */}
+              {bodyForm.goal !== "maintain" && (
+                <div>
+                  <label className="text-xs text-zinc-500 mb-1 block">{bodyForm.goal === "cut" ? "減量" : "増量"}のペース</label>
+                  <div className="flex gap-2">
+                    {PACE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setBodyForm((f) => ({ ...f, pace: opt.value }))}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${bodyForm.pace === opt.value ? "bg-emerald-500 text-white" : "bg-zinc-800 text-zinc-400"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(() => {
+                const age = parseInt(bodyForm.age), height = parseFloat(bodyForm.height), weight = parseFloat(bodyForm.weight);
+                if (!age || !height || !weight) return null;
+                const bf = bodyForm.bodyFat.trim() ? parseFloat(bodyForm.bodyFat) : undefined;
+                const p = calcPFCTarget({
+                  gender: bodyForm.gender, age, height, weight, targetWeight: parseFloat(bodyForm.targetWeight) || weight,
+                  goal: bodyForm.goal, activityLevel: bodyForm.activityLevel, pace: bodyForm.pace, bodyFat: bf,
+                });
+                return (
+                  <div className="bg-zinc-800/60 rounded-xl px-3 py-2.5 text-xs text-zinc-400 leading-relaxed">
+                    <p>基礎代謝 {p.bmr}kcal ・ 1日の消費 {p.tdee}kcal{p.usedBodyFat ? "（体脂肪率から計算）" : ""}</p>
+                    <p className="text-zinc-200 mt-1">
+                      目標 {p.calories}kcal ・ P{p.protein}g F{p.fat}g C{p.carb}g
+                    </p>
+                    {p.weeklyChangeKg !== 0 && (
+                      <p className="mt-1">ペースの目安：週 {p.weeklyChangeKg > 0 ? "+" : ""}{p.weeklyChangeKg}kg</p>
+                    )}
+                  </div>
+                );
+              })()}
 
               <Button onClick={handleSaveBody} disabled={savingBody} className="w-full mt-1">
                 {savingBody ? "保存中..." : "保存してPFC再計算"}

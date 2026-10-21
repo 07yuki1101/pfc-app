@@ -7,8 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuthStore } from "@/store/authStore";
 import { createUserProfile } from "@/lib/firebase/firestore";
-import { calcPFCTarget } from "@/lib/pfc";
-import { Gender, Goal } from "@/types";
+import { calcPFCTarget, ACTIVITY_OPTIONS, PACE_OPTIONS } from "@/lib/pfc";
+import { ActivityLevel, Gender, Goal, Pace } from "@/types";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import toast from "react-hot-toast";
@@ -21,6 +21,9 @@ const schema = z.object({
   weight: z.coerce.number().min(20).max(300),
   targetWeight: z.coerce.number().min(20).max(300),
   goal: z.enum(["cut", "bulk", "maintain"]),
+  activityLevel: z.enum(["sedentary", "light", "moderate", "active", "very_active"]),
+  pace: z.enum(["slow", "normal", "fast"]),
+  bodyFat: z.union([z.literal(""), z.coerce.number().min(3).max(60)]).optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -40,14 +43,15 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { gender: "male", goal: "cut" },
+    defaultValues: { gender: "male", goal: "cut", activityLevel: "moderate", pace: "normal" },
   });
 
   const onSubmit = async (data: FormData) => {
     if (!user) return;
     setLoading(true);
     try {
-      const pfc = calcPFCTarget(data);
+      const bodyFat = typeof data.bodyFat === "number" ? data.bodyFat : undefined;
+      const pfc = calcPFCTarget({ ...data, bodyFat });
       const profile = {
         uid: user.uid,
         email: user.email,
@@ -59,6 +63,9 @@ export default function RegisterPage() {
         weight: data.weight,
         targetWeight: data.targetWeight,
         goal: data.goal as Goal,
+        activityLevel: data.activityLevel as ActivityLevel,
+        pace: data.pace as Pace,
+        ...(bodyFat !== undefined ? { bodyFat } : {}),
         targetCalories: pfc.calories,
         targetProtein: pfc.protein,
         targetFat: pfc.fat,
@@ -142,6 +149,31 @@ export default function RegisterPage() {
                 error={errors.weight?.message}
                 {...register("weight")}
               />
+              <Input
+                label="体脂肪率 (%)・任意"
+                type="number"
+                step="0.1"
+                placeholder="分かれば入力（より正確になります）"
+                error={errors.bodyFat ? "3〜60の数値で入力してください" : undefined}
+                {...register("bodyFat")}
+              />
+
+              <div>
+                <label className="text-sm text-zinc-400 font-medium mb-2 block">ふだんの活動量</label>
+                <div className="flex flex-col gap-2">
+                  {ACTIVITY_OPTIONS.map((opt) => (
+                    <label key={opt.value}>
+                      <input type="radio" value={opt.value} {...register("activityLevel")} className="sr-only" />
+                      <div className={`px-4 py-2.5 rounded-xl border-2 cursor-pointer transition-all ${
+                        watch("activityLevel") === opt.value ? "border-emerald-500 bg-emerald-500/10" : "border-zinc-700"
+                      }`}>
+                        <p className={`text-sm font-semibold ${watch("activityLevel") === opt.value ? "text-emerald-400" : "text-zinc-200"}`}>{opt.label}</p>
+                        <p className="text-zinc-500 text-xs mt-0.5">{opt.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
 
               <Button
                 type="button"
@@ -189,6 +221,28 @@ export default function RegisterPage() {
                   ))}
                 </div>
               </div>
+
+              {watch("goal") !== "maintain" && (
+                <div>
+                  <label className="text-sm text-zinc-400 font-medium mb-2 block">
+                    {watch("goal") === "cut" ? "減量" : "増量"}のペース
+                  </label>
+                  <div className="flex gap-2">
+                    {PACE_OPTIONS.map((opt) => (
+                      <label key={opt.value} className="flex-1">
+                        <input type="radio" value={opt.value} {...register("pace")} className="sr-only" />
+                        <div className={`text-center py-3 rounded-xl border-2 cursor-pointer text-sm transition-all ${
+                          watch("pace") === opt.value
+                            ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                            : "border-zinc-700 text-zinc-400"
+                        }`}>
+                          {opt.label}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-3 mt-2">
                 <Button type="button" variant="secondary" size="lg" className="flex-1" onClick={() => setStep(0)}>

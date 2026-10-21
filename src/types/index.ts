@@ -1,5 +1,7 @@
 export type Gender = "male" | "female";
 export type Goal = "cut" | "bulk" | "maintain";
+export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "very_active";
+export type Pace = "slow" | "normal" | "fast";
 
 export interface UserProfile {
   uid: string;
@@ -12,6 +14,10 @@ export interface UserProfile {
   weight: number; // kg
   targetWeight: number; // kg
   goal: Goal;
+  // Older profiles may lack these; calcPFCTarget falls back to moderate / normal / no body fat
+  activityLevel?: ActivityLevel;
+  pace?: Pace;
+  bodyFat?: number | null; // %, null when cleared
   targetCalories: number;
   targetProtein: number; // g
   targetFat: number; // g
