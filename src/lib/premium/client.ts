@@ -30,6 +30,29 @@ async function purchases() {
   return Purchases;
 }
 
+const STORE_TIMEOUT_MS = 20000;
+
+function withTimeout<T>(p: Promise<T>, message: string): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(message)), STORE_TIMEOUT_MS)),
+  ]);
+}
+
+// Purchase/restore can run before the background setup finished (or after it timed out),
+// so make sure RevenueCat is configured for the signed-in user first.
+async function readyPurchases() {
+  const Purchases = await purchases();
+  if (!Purchases) return null;
+  if (!configuredForUid) {
+    const { auth } = await import("@/lib/firebase/config");
+    const uid = auth.currentUser?.uid;
+    if (!uid) throw new Error("ログインが必要です");
+    await withTimeout(configurePurchases(uid), "App Storeに接続できませんでした。通信環境を確認してもう一度お試しください");
+  }
+  return Purchases;
+}
+
 // Call once the Firebase user is known. Uses the Firebase uid as the
 // RevenueCat app user id so the server can look the user up by uid.
 export async function configurePurchases(uid: string): Promise<void> {
@@ -53,9 +76,12 @@ export async function getNativePremium(): Promise<boolean | null> {
 }
 
 export async function purchaseMonthly(): Promise<void> {
-  const Purchases = await purchases();
+  const Purchases = await readyPurchases();
   if (!Purchases) throw new Error("購入はiOSアプリから行えます");
-  const offerings = await Purchases.getOfferings();
+  const offerings = await withTimeout(
+    Purchases.getOfferings(),
+    "プランを読み込めませんでした。時間をおいてもう一度お試しください"
+  );
   const offering = offerings.current ?? offerings.all["default"];
   const pkg = offering?.monthly ?? offering?.availablePackages[0];
   if (!pkg) throw new Error("購入できるプランが見つかりませんでした");
@@ -68,8 +94,11 @@ export async function purchaseMonthly(): Promise<void> {
 }
 
 export async function restorePurchases(): Promise<boolean> {
-  const Purchases = await purchases();
+  const Purchases = await readyPurchases();
   if (!Purchases) throw new Error("復元はiOSアプリから行えます");
-  const { customerInfo } = await Purchases.restorePurchases();
+  const { customerInfo } = await withTimeout(
+    Purchases.restorePurchases(),
+    "復元に時間がかかっています。時間をおいてもう一度お試しください"
+  );
   return customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID] !== undefined;
 }
