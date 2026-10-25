@@ -24,10 +24,13 @@ function apiKey(): string | undefined {
   return process.env.NEXT_PUBLIC_REVENUECAT_IOS_API_KEY || undefined;
 }
 
+// Capacitor plugin proxies answer every property, including `then`, so returning one
+// from an async function makes the Promise wait on a native "then" call that never
+// resolves. Always hand the plugin around wrapped in an object.
 async function purchases() {
   if (!apiKey() || !(await isNativeApp())) return null;
   const { Purchases } = await import("@revenuecat/purchases-capacitor");
-  return Purchases;
+  return { Purchases };
 }
 
 const STORE_TIMEOUT_MS = 20000;
@@ -43,7 +46,7 @@ function withTimeout<T>(p: Promise<T>, message: string): Promise<T> {
 // so make sure RevenueCat is configured for the signed-in user first.
 async function readyPurchases() {
   console.log("[premium] readyPurchases: loading SDK, native =", await isNativeApp(), "key =", !!apiKey());
-  const Purchases = await purchases();
+  const Purchases = (await purchases())?.Purchases;
   if (!Purchases) return null;
   console.log("[premium] readyPurchases: configured for", configuredForUid);
   if (!configuredForUid) {
@@ -52,14 +55,14 @@ async function readyPurchases() {
     if (!uid) throw new Error("ログインが必要です");
     await withTimeout(configurePurchases(uid), "App Storeに接続できませんでした。通信環境を確認してもう一度お試しください");
   }
-  return Purchases;
+  return { Purchases };
 }
 
 // Call once the Firebase user is known. Uses the Firebase uid as the
 // RevenueCat app user id so the server can look the user up by uid.
 export async function configurePurchases(uid: string): Promise<void> {
   if (configuredForUid === uid) return;
-  const Purchases = await purchases();
+  const Purchases = (await purchases())?.Purchases;
   if (!Purchases) return;
   try {
     console.log("[premium] configure: start");
@@ -73,14 +76,14 @@ export async function configurePurchases(uid: string): Promise<void> {
 
 // Returns null when not running in the iOS app (premium state then comes from the server/profile).
 export async function getNativePremium(): Promise<boolean | null> {
-  const Purchases = await purchases();
+  const Purchases = (await purchases())?.Purchases;
   if (!Purchases) return null;
   const { customerInfo } = await Purchases.getCustomerInfo();
   return customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID] !== undefined;
 }
 
 export async function purchaseMonthly(): Promise<void> {
-  const Purchases = await readyPurchases();
+  const Purchases = (await readyPurchases())?.Purchases;
   if (!Purchases) throw new Error("購入はiOSアプリから行えます");
   console.log("[premium] purchase: fetching offerings");
   const offerings = await withTimeout(
@@ -100,7 +103,7 @@ export async function purchaseMonthly(): Promise<void> {
 }
 
 export async function restorePurchases(): Promise<boolean> {
-  const Purchases = await readyPurchases();
+  const Purchases = (await readyPurchases())?.Purchases;
   if (!Purchases) throw new Error("復元はiOSアプリから行えます");
   const { customerInfo } = await withTimeout(
     Purchases.restorePurchases(),
