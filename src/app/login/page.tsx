@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { signInWithGoogle, signInWithApple } from "@/lib/firebase/auth";
 import Button from "@/components/ui/Button";
@@ -37,9 +38,14 @@ export default function LoginPage() {
     <main className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-6">
       {/* Logo */}
       <div className="mb-12 text-center">
-        <div className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-emerald-500/30">
-          <span className="text-4xl">💪</span>
-        </div>
+        <Image
+          src="/icons/icon-512.png"
+          alt="PFC Log"
+          width={80}
+          height={80}
+          priority
+          className="w-20 h-20 mx-auto mb-4 rounded-[22%] ring-1 ring-zinc-800 shadow-2xl shadow-emerald-500/20"
+        />
         <h1 className="text-3xl font-bold text-zinc-100">PFC Log</h1>
         <p className="text-zinc-500 mt-2 text-sm">ボディメイクのための食事管理</p>
       </div>
