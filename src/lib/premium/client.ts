@@ -1,5 +1,6 @@
-// RevenueCat on the iOS app (Capacitor). On the web nothing here loads the SDK;
+// RevenueCat on the iOS app (Capacitor). On the web the SDK is never called;
 // subscriptions can only be bought inside the iOS app.
+import { Purchases } from "@revenuecat/purchases-capacitor";
 import { PREMIUM_ENTITLEMENT_ID } from "./config";
 
 export class PurchaseCancelledError extends Error {
@@ -29,7 +30,6 @@ function apiKey(): string | undefined {
 // resolves. Always hand the plugin around wrapped in an object.
 async function purchases() {
   if (!apiKey() || !(await isNativeApp())) return null;
-  const { Purchases } = await import("@revenuecat/purchases-capacitor");
   return { Purchases };
 }
 
@@ -46,8 +46,9 @@ function withTimeout<T>(p: Promise<T>, message: string): Promise<T> {
 // so make sure RevenueCat is configured for the signed-in user first.
 async function readyPurchases() {
   console.log("[premium] readyPurchases: loading SDK, native =", await isNativeApp(), "key =", !!apiKey());
-  const Purchases = (await purchases())?.Purchases;
-  if (!Purchases) return null;
+  const plugin = (await purchases())?.Purchases;
+  console.log("[premium] readyPurchases: SDK ready =", !!plugin);
+  if (!plugin) return null;
   console.log("[premium] readyPurchases: configured for", configuredForUid);
   if (!configuredForUid) {
     const { auth } = await import("@/lib/firebase/config");
