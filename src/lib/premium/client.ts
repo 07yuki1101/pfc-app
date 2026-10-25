@@ -42,8 +42,10 @@ function withTimeout<T>(p: Promise<T>, message: string): Promise<T> {
 // Purchase/restore can run before the background setup finished (or after it timed out),
 // so make sure RevenueCat is configured for the signed-in user first.
 async function readyPurchases() {
+  console.log("[premium] readyPurchases: loading SDK, native =", await isNativeApp(), "key =", !!apiKey());
   const Purchases = await purchases();
   if (!Purchases) return null;
+  console.log("[premium] readyPurchases: configured for", configuredForUid);
   if (!configuredForUid) {
     const { auth } = await import("@/lib/firebase/config");
     const uid = auth.currentUser?.uid;
@@ -60,7 +62,9 @@ export async function configurePurchases(uid: string): Promise<void> {
   const Purchases = await purchases();
   if (!Purchases) return;
   try {
+    console.log("[premium] configure: start");
     await Purchases.configure({ apiKey: apiKey()!, appUserID: uid });
+    console.log("[premium] configure: done");
     configuredForUid = uid;
   } catch (e) {
     console.error("[premium] RevenueCat configure failed:", e);
@@ -78,12 +82,14 @@ export async function getNativePremium(): Promise<boolean | null> {
 export async function purchaseMonthly(): Promise<void> {
   const Purchases = await readyPurchases();
   if (!Purchases) throw new Error("購入はiOSアプリから行えます");
+  console.log("[premium] purchase: fetching offerings");
   const offerings = await withTimeout(
     Purchases.getOfferings(),
     "プランを読み込めませんでした。時間をおいてもう一度お試しください"
   );
   const offering = offerings.current ?? offerings.all["default"];
   const pkg = offering?.monthly ?? offering?.availablePackages[0];
+  console.log("[premium] purchase: offerings", Object.keys(offerings.all), "package", pkg?.product.identifier);
   if (!pkg) throw new Error("購入できるプランが見つかりませんでした");
   try {
     await Purchases.purchasePackage({ aPackage: pkg });

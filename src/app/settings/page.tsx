@@ -64,6 +64,7 @@ export default function SettingsPage() {
   }, []);
 
   async function handleSubscribe() {
+    console.log("[premium] subscribe tapped");
     setPurchasing(true);
     try {
       await purchaseMonthly();
