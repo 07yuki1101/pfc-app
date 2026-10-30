@@ -93,19 +93,3 @@ export async function updateUserLabelScanUsage(
     }),
   });
 }
-
-export async function setUserPremium(
-  uid: string,
-  idToken: string,
-  isPremium: boolean
-): Promise<void> {
-  const mask = "updateMask.fieldPaths=isPremium";
-  await fetch(`${BASE_URL}/users/${uid}?${mask}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify({ fields: { isPremium: encodeValue(isPremium) } }),
-  });
-}

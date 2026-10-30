@@ -4,7 +4,7 @@ import { PREMIUM_MONTHLY_PRICE_JPY } from "@/lib/premium/config";
 import { verifyFirebaseUser } from "@/lib/firebase/verifyIdToken";
 import { getUserAiUsage, updateUserLabelScanUsage } from "@/lib/firebase/firestoreRest";
 import { readNutritionLabel } from "@/lib/ai/nutritionLabel";
-import { FREE_LABEL_SCAN_DAILY_LIMIT } from "@/lib/ai/limits";
+import { FREE_LABEL_SCAN_DAILY_LIMIT, PREMIUM_LABEL_SCAN_DAILY_LIMIT } from "@/lib/ai/limits";
 import { todayString } from "@/lib/utils";
 
 // Client downsizes photos before upload, so anything larger than this is unexpected.
@@ -33,9 +33,15 @@ export async function POST(req: Request) {
   const today = todayString();
   const usedToday = usage.labelScanDate === today ? usage.labelScanToday : 0;
 
+  if (premium && usedToday >= PREMIUM_LABEL_SCAN_DAILY_LIMIT) {
+    return NextResponse.json(
+      { error: `本日の撮影読み取りの上限（${PREMIUM_LABEL_SCAN_DAILY_LIMIT}回）に達しました。明日またご利用ください` },
+      { status: 429 }
+    );
+  }
   if (!premium && usedToday >= FREE_LABEL_SCAN_DAILY_LIMIT) {
     return NextResponse.json(
-      { error: `本日の撮影読み取りの上限（${FREE_LABEL_SCAN_DAILY_LIMIT}回）に達しました。プレミアム（月¥${PREMIUM_MONTHLY_PRICE_JPY}）なら無制限で使えます` },
+      { error: `本日の撮影読み取りの上限（${FREE_LABEL_SCAN_DAILY_LIMIT}回）に達しました。プレミアム（月¥${PREMIUM_MONTHLY_PRICE_JPY}）なら1日${PREMIUM_LABEL_SCAN_DAILY_LIMIT}回まで使えます` },
       { status: 429 }
     );
   }
@@ -43,12 +49,10 @@ export async function POST(req: Request) {
   try {
     const result = await readNutritionLabel(image);
     // Count every attempt that reached the AI, including unreadable photos.
-    if (!premium) {
-      await updateUserLabelScanUsage(uid, idToken, {
-        labelScanDate: today,
-        labelScanToday: usedToday + 1,
-      });
-    }
+    await updateUserLabelScanUsage(uid, idToken, {
+      labelScanDate: today,
+      labelScanToday: usedToday + 1,
+    });
     if (!result) {
       return NextResponse.json(
         { error: "栄養成分表示が読み取れませんでした。表示部分が大きく写るように撮り直してください" },

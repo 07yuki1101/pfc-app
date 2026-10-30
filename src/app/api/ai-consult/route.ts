@@ -6,7 +6,7 @@ import { getUserAiUsage, updateUserAiUsage } from "@/lib/firebase/firestoreRest"
 import { buildConsultationPrompt } from "@/lib/ai/prompt";
 import { generateConsultation } from "@/lib/ai/provider";
 import { CONSULTATION_OPTIONS } from "@/lib/ai/consultationOptions";
-import { FREE_DAILY_LIMIT } from "@/lib/ai/limits";
+import { FREE_DAILY_LIMIT, PREMIUM_DAILY_LIMIT } from "@/lib/ai/limits";
 import { ConsultationRequestPayload } from "@/lib/ai/types";
 import { todayString } from "@/lib/utils";
 
@@ -34,9 +34,15 @@ export async function POST(req: Request) {
   const today = todayString();
   const usedToday = usage.aiUsageDate === today ? usage.aiUsageToday : 0;
 
+  if (premium && usedToday >= PREMIUM_DAILY_LIMIT) {
+    return NextResponse.json(
+      { error: `本日の利用上限（${PREMIUM_DAILY_LIMIT}回）に達しました。明日またご利用ください` },
+      { status: 429 }
+    );
+  }
   if (!premium && usedToday >= FREE_DAILY_LIMIT) {
     return NextResponse.json(
-      { error: `本日の利用上限（${FREE_DAILY_LIMIT}回）に達しました。プレミアム（月¥${PREMIUM_MONTHLY_PRICE_JPY}）なら無制限で使えます` },
+      { error: `本日の利用上限（${FREE_DAILY_LIMIT}回）に達しました。プレミアム（月¥${PREMIUM_MONTHLY_PRICE_JPY}）なら1日${PREMIUM_DAILY_LIMIT}回まで使えます` },
       { status: 429 }
     );
   }
@@ -44,12 +50,10 @@ export async function POST(req: Request) {
   try {
     const prompt = buildConsultationPrompt(payload);
     const result = await generateConsultation(prompt);
-    if (!premium) {
-      await updateUserAiUsage(uid, idToken, {
-        aiUsageDate: today,
-        aiUsageToday: usedToday + 1,
-      });
-    }
+    await updateUserAiUsage(uid, idToken, {
+      aiUsageDate: today,
+      aiUsageToday: usedToday + 1,
+    });
     return NextResponse.json(result);
   } catch (e) {
     console.error("AI consult error:", e);

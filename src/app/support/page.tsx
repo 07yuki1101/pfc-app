@@ -23,7 +23,7 @@ export default function SupportPage() {
             <div className="space-y-4">
               <div>
                 <p className="text-zinc-200">プレミアムでは何ができますか？</p>
-                <p>AI相談と栄養成分表示の撮影読み取りが回数無制限になります（無料プランはAI相談1日1回、撮影読み取り1日5回まで）。</p>
+                <p>AI相談が1日30回、栄養成分表示の撮影読み取りが1日50回まで使えるようになります（無料プランはAI相談1日1回、撮影読み取り1日5回まで）。</p>
               </div>
               <div>
                 <p className="text-zinc-200">プレミアムを解約するには？</p>

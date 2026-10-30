@@ -5,17 +5,15 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { signOutUser, deleteAccount } from "@/lib/firebase/auth";
 import { updateUserProfile } from "@/lib/firebase/firestore";
-import { auth } from "@/lib/firebase/config";
 import { calcPFCTarget, ACTIVITY_OPTIONS, PACE_OPTIONS } from "@/lib/pfc";
 import { Card } from "@/components/ui/Card";
 import { BottomNav } from "@/components/ui/BottomNav";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { LogOut, Trash2, ChevronRight, Shield, FileText, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import type { ActivityLevel, Gender, Goal, Pace } from "@/types";
-import { FREE_DAILY_LIMIT, FREE_LABEL_SCAN_DAILY_LIMIT } from "@/lib/ai/limits";
+import { FREE_DAILY_LIMIT, FREE_LABEL_SCAN_DAILY_LIMIT, PREMIUM_DAILY_LIMIT, PREMIUM_LABEL_SCAN_DAILY_LIMIT } from "@/lib/ai/limits";
 import { PREMIUM_MONTHLY_PRICE_JPY } from "@/lib/premium/config";
 import { isNativeApp, purchaseMonthly, restorePurchases, PurchaseCancelledError } from "@/lib/premium/client";
 
@@ -49,11 +47,6 @@ export default function SettingsPage() {
     targetCarb: String(profile?.targetCarb ?? ""),
   });
   const [savingPFC, setSavingPFC] = useState(false);
-
-  // AI unlock code
-  const [unlockCode, setUnlockCode] = useState("");
-  const [unlocking, setUnlocking] = useState(false);
-  const [showUnlockCode, setShowUnlockCode] = useState(false);
 
   // Subscription
   const [native, setNative] = useState(false);
@@ -194,31 +187,6 @@ export default function SettingsPage() {
       toast.error("保存に失敗しました");
     } finally {
       setSavingPFC(false);
-    }
-  }
-
-  async function handleUnlock() {
-    if (!unlockCode.trim()) return;
-    setUnlocking(true);
-    try {
-      const idToken = await auth.currentUser?.getIdToken();
-      const res = await fetch("/api/ai-consult/unlock", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({ code: unlockCode.trim() }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "解除に失敗しました");
-      setProfile({ ...profile!, isPremium: true });
-      setUnlockCode("");
-      toast.success("プレミアムを有効にしました");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "解除に失敗しました");
-    } finally {
-      setUnlocking(false);
     }
   }
 
@@ -454,12 +422,12 @@ export default function SettingsPage() {
               <tr className="border-t border-zinc-800">
                 <td className="py-2">AIに相談</td>
                 <td className="text-center text-zinc-500">1日{FREE_DAILY_LIMIT}回</td>
-                <td className="text-center text-emerald-400 font-medium">無制限</td>
+                <td className="text-center text-emerald-400 font-medium">1日{PREMIUM_DAILY_LIMIT}回</td>
               </tr>
               <tr className="border-t border-zinc-800">
                 <td className="py-2">成分表示の撮影読み取り</td>
                 <td className="text-center text-zinc-500">1日{FREE_LABEL_SCAN_DAILY_LIMIT}回</td>
-                <td className="text-center text-emerald-400 font-medium">無制限</td>
+                <td className="text-center text-emerald-400 font-medium">1日{PREMIUM_LABEL_SCAN_DAILY_LIMIT}回</td>
               </tr>
               <tr className="border-t border-zinc-800">
                 <td className="py-2">食事記録・検索・PFC管理</td>
@@ -470,7 +438,7 @@ export default function SettingsPage() {
           </table>
 
           {profile.isPremium ? (
-            <p className="text-xs text-emerald-400">AI相談と撮影読み取りを無制限で利用できます</p>
+            <p className="text-xs text-emerald-400">AI相談と撮影読み取りをたっぷり利用できます</p>
           ) : native ? (
             <>
               <Button onClick={handleSubscribe} disabled={purchasing} className="w-full">
@@ -494,28 +462,6 @@ export default function SettingsPage() {
             <p className="text-xs text-zinc-500">プレミアムへの登録はiPhoneアプリから行えます</p>
           )}
 
-          {!profile.isPremium && (
-            <div className="mt-3 pt-3 border-t border-zinc-800">
-              {showUnlockCode ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={unlockCode}
-                    onChange={(e) => setUnlockCode(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-                    placeholder="アンロックコード"
-                    className="py-2.5"
-                  />
-                  <Button size="sm" onClick={handleUnlock} disabled={unlocking || !unlockCode.trim()}>
-                    {unlocking ? "確認中..." : "解除"}
-                  </Button>
-                </div>
-              ) : (
-                <button onClick={() => setShowUnlockCode(true)} className="text-xs text-zinc-600">
-                  コードをお持ちの方
-                </button>
-              )}
-            </div>
-          )}
         </Card>
 
         {/* Menu Items */}

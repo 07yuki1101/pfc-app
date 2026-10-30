@@ -1,7 +1,8 @@
 // Server-side source of truth for "is this user premium?".
 //
 // When REVENUECAT_SECRET_API_KEY is set, premium is decided only by RevenueCat
-// (App Store subscriptions + promotional grants from unlock codes). The
+// (App Store subscriptions, plus any promotional grants made from the
+// RevenueCat dashboard). The
 // Firestore `isPremium` flag is client-writable under the current rules, so it
 // is only used as a fallback before RevenueCat is configured.
 import { PREMIUM_ENTITLEMENT_ID, isOwnerEmail } from "./config";
@@ -27,19 +28,6 @@ export async function hasPremiumEntitlement(uid: string): Promise<boolean> {
   if (!entitlement) return false;
   // expires_date is null for lifetime/promotional-lifetime grants
   return entitlement.expires_date === null || new Date(entitlement.expires_date) > new Date();
-}
-
-// Used by unlock codes: grants premium without a purchase.
-export async function grantPromotionalPremium(uid: string): Promise<void> {
-  const res = await fetch(
-    `${RC_API}/subscribers/${encodeURIComponent(uid)}/entitlements/${PREMIUM_ENTITLEMENT_ID}/promotional`,
-    {
-      method: "POST",
-      headers: { Authorization: `Bearer ${secretKey()}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ duration: "lifetime" }),
-    }
-  );
-  if (!res.ok) throw new Error(`RevenueCat ${res.status}`);
 }
 
 export async function isPremiumUser(
